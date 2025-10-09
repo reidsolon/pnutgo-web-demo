@@ -109,6 +109,49 @@ definePageMeta({
   auth: false,
 });
 
+// Import SEO composable
+const { setSEO, createWebPageStructuredData } = useSEO()
+
+// Set SEO meta tags for the login page
+setSEO({
+  title: 'Login to PnutGo - Access Your Companion Collection',
+  description: 'Sign in to your PnutGo account to continue your companion hunting adventure. Access your collection, view quest progress, and explore the interactive map. Secure account login.',
+  keywords: [
+    'PnutGo login',
+    'sign in PnutGo',
+    'companion hunter account',
+    'PnutGo account access',
+    'secure login',
+    'mobile game login',
+    'companion collection access',
+    'quest progress login',
+    'interactive map access',
+    'PnutGo authentication',
+    'player account signin',
+    'companion hunting login'
+  ],
+  ogType: 'website',
+  twitterCard: 'summary',
+  robots: 'noindex, nofollow', // Login pages shouldn't be indexed
+  structuredData: createWebPageStructuredData({
+    '@type': 'WebPage',
+    name: 'PnutGo Login',
+    description: 'Secure login page for PnutGo companion hunting game',
+    potentialAction: {
+      '@type': 'AuthorizeAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: 'https://pnutgo.com/login',
+        actionPlatform: ['http://schema.org/DesktopWebPlatform', 'http://schema.org/MobileWebPlatform']
+      },
+      result: {
+        '@type': 'WebPage',
+        name: 'PnutGo Game Dashboard'
+      }
+    }
+  })
+})
+
 const { login, loading, error } = useAuthentication();
 
 const form = reactive({

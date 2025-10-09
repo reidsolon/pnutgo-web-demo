@@ -222,6 +222,81 @@ definePageMeta({
   auth: true
 });
 
+// Import SEO composable
+const { setSEO, createWebPageStructuredData, createBreadcrumbStructuredData } = useSEO()
+
+// Set SEO meta tags for the badges page
+setSEO({
+  title: 'Achievement Badges - Track Your Progress | PnutGo',
+  description: 'View your PnutGo achievement badges and track companion mastery progress. Unlock badges for capturing companions, completing quests, and reaching milestones in your hunting adventure.',
+  keywords: [
+    'PnutGo achievement badges',
+    'companion mastery badges',
+    'gaming achievements',
+    'progress tracking badges',
+    'companion hunting achievements',
+    'quest completion badges',
+    'milestone rewards',
+    'gaming progression system',
+    'unlock achievements',
+    'badge collection game',
+    'companion hunting progress',
+    'achievement unlocks',
+    'gaming milestones',
+    'reward system badges'
+  ],
+  ogType: 'website',
+  twitterCard: 'summary_large_image',
+  robots: 'noindex, follow', // Private game content
+  structuredData: [
+    createWebPageStructuredData({
+      '@type': 'WebPage',
+      name: 'PnutGo Achievement Badges',
+      description: 'Achievement badge collection and progress tracking for PnutGo companion hunting game',
+      mainEntity: {
+        '@type': 'CollectionPage',
+        name: 'Badge Collection',
+        description: 'Collection of earned and available achievement badges',
+        numberOfItems: '{{ allBadges.length }}',
+        about: {
+          '@type': 'VideoGame',
+          name: 'PnutGo',
+          achievementSystem: {
+            '@type': 'Thing',
+            name: 'Companion Mastery Badges',
+            description: 'Achievement system for tracking companion hunting progress and milestones'
+          }
+        }
+      },
+      potentialAction: [
+        {
+          '@type': 'ViewAction',
+          target: {
+            '@type': 'WebPage',
+            name: 'Badge Details'
+          },
+          object: {
+            '@type': 'Achievement',
+            name: 'Companion Mastery Badges'
+          }
+        },
+        {
+          '@type': 'AchieveAction',
+          target: {
+            '@type': 'Goal',
+            name: 'Unlock New Badges'
+          }
+        }
+      ]
+    }),
+    createBreadcrumbStructuredData([
+      { name: 'PnutGo', url: 'https://pnutgo.com' },
+      { name: 'Game Dashboard', url: 'https://pnutgo.com/dashboard' },
+      { name: 'Achievement Badges', url: 'https://pnutgo.com/badges' }
+    ])
+  ]
+})
+
 const { apiClient } = useApiClient();
 
 // Badge state

@@ -153,6 +153,76 @@ definePageMeta({
   auth: true
 });
 
+// Import SEO composable
+const { setSEO, createWebPageStructuredData, createBreadcrumbStructuredData } = useSEO()
+
+// Set SEO meta tags for the map page
+setSEO({
+  title: 'Interactive Map - Discover Companions Near You | PnutGo',
+  description: 'Explore the PnutGo interactive map to discover and capture magical companions in real-world locations. Use GPS tracking to find rare companions, complete location-based quests, and track your hunting progress.',
+  keywords: [
+    'PnutGo interactive map',
+    'companion discovery map',
+    'location-based companion hunting',
+    'GPS companion tracking',
+    'real-time companion spawns',
+    'interactive game map',
+    'companion locations',
+    'nearby companions',
+    'location-based gameplay',
+    'real world exploration',
+    'companion hunting interface',
+    'GPS adventure map',
+    'live companion tracking',
+    'map-based gaming'
+  ],
+  ogType: 'website',
+  twitterCard: 'summary_large_image',
+  robots: 'noindex, follow', // Private game content
+  structuredData: [
+    createWebPageStructuredData({
+      '@type': 'WebPage',
+      name: 'PnutGo Interactive Map',
+      description: 'Real-time interactive map for discovering and capturing companions in PnutGo',
+      mainEntity: {
+        '@type': 'Map',
+        name: 'PnutGo Companion Discovery Map',
+        description: 'Interactive map showing real-time companion spawns and locations for hunting',
+        mapType: 'VenueMap',
+        hasMap: {
+          '@type': 'Map',
+          mapType: 'InteractiveMap'
+        }
+      },
+      potentialAction: [
+        {
+          '@type': 'DiscoverAction',
+          target: {
+            '@type': 'Place',
+            name: 'Companion Spawn Locations'
+          },
+          object: {
+            '@type': 'Thing',
+            name: 'Magical Companions'
+          }
+        },
+        {
+          '@type': 'PlayAction',
+          target: {
+            '@type': 'VideoGame',
+            name: 'PnutGo Location-Based Gameplay'
+          }
+        }
+      ]
+    }),
+    createBreadcrumbStructuredData([
+      { name: 'PnutGo', url: 'https://pnutgo.com' },
+      { name: 'Game Dashboard', url: 'https://pnutgo.com/dashboard' },
+      { name: 'Interactive Map', url: 'https://pnutgo.com/map' }
+    ])
+  ]
+})
+
 const { user, logout } = useAuthentication();
 
 // User location state

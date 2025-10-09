@@ -30,5 +30,78 @@
 </template>
 
 <script setup>
-// Simple welcome page without TypeScript errors
+// Import SEO composable
+const { setSEO, createWebPageStructuredData, createFAQStructuredData } = useSEO()
+
+// Set SEO meta tags for the welcome page
+setSEO({
+  title: 'Welcome to PnutGo - Start Your Companion Hunting Adventure',
+  description: 'Join millions of players in PnutGo! Explore interactive maps, complete daily quests, collect achievement badges, and discover magical companions in the real world. Free to play!',
+  keywords: [
+    'PnutGo welcome',
+    'start companion hunting',
+    'join PnutGo',
+    'mobile game onboarding',
+    'companion hunting tutorial',
+    'location-based game features',
+    'interactive map exploration',
+    'daily quest system',
+    'achievement badges',
+    'real world adventure',
+    'companion collection game',
+    'GPS-based gameplay',
+    'augmented reality gaming',
+    'mobile AR experience'
+  ],
+  ogType: 'website',
+  twitterCard: 'summary_large_image',
+  structuredData: [
+    createWebPageStructuredData({
+      mainEntity: {
+        '@type': 'VideoGame',
+        name: 'PnutGo',
+        description: 'Welcome to PnutGo - the ultimate location-based companion hunting experience'
+      },
+      about: [
+        {
+          '@type': 'Thing',
+          name: 'Interactive Map Gameplay',
+          description: 'Explore real-world locations with our interactive map system'
+        },
+        {
+          '@type': 'Thing',
+          name: 'Quest System',
+          description: 'Complete daily challenges and special events for rewards'
+        },
+        {
+          '@type': 'Thing',
+          name: 'Achievement Tracking',
+          description: 'Collect badges and track your companion mastery progress'
+        }
+      ]
+    }),
+    createFAQStructuredData([
+      {
+        question: 'What is PnutGo?',
+        answer: 'PnutGo is a location-based companion hunting game where you explore the real world to discover and capture magical companions using your mobile device.'
+      },
+      {
+        question: 'How do I start playing PnutGo?',
+        answer: 'Simply click "Get Started" to create your account, enable location services, and begin exploring the interactive map to find your first companion.'
+      },
+      {
+        question: 'What features does PnutGo offer?',
+        answer: 'PnutGo features interactive maps with location-based gameplay, a comprehensive quest system with daily challenges, achievement badges for progression tracking, and real-time companion collection.'
+      },
+      {
+        question: 'Is PnutGo free to play?',
+        answer: 'Yes! PnutGo is completely free to play. You can explore, capture companions, complete quests, and earn badges without any cost.'
+      },
+      {
+        question: 'Do I need to enable location services?',
+        answer: 'Yes, PnutGo requires location services to provide the location-based gameplay experience. This allows you to discover companions in real-world locations.'
+      }
+    ])
+  ]
+})
 </script>

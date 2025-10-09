@@ -142,6 +142,107 @@ definePageMeta({
   auth: true
 });
 
+// Import SEO composable
+const { setSEO, createWebPageStructuredData, createBreadcrumbStructuredData } = useSEO()
+
+// Set SEO meta tags for the quests page
+setSEO({
+  title: 'Quest Board - Daily Challenges & Rewards | PnutGo',
+  description: 'Complete daily, weekly, and special event quests in PnutGo. Earn experience points, unlock rewards, and progress through challenging companion hunting missions. Active quest tracking and completion.',
+  keywords: [
+    'PnutGo quest board',
+    'daily quests PnutGo',
+    'companion hunting quests',
+    'quest completion rewards',
+    'daily challenges',
+    'weekly quest missions',
+    'special event quests',
+    'quest tracking system',
+    'experience point quests',
+    'reward earning quests',
+    'mission completion',
+    'challenge progression',
+    'quest achievement system',
+    'gaming daily tasks'
+  ],
+  ogType: 'website',
+  twitterCard: 'summary_large_image',
+  robots: 'noindex, follow', // Private game content
+  structuredData: [
+    createWebPageStructuredData({
+      '@type': 'WebPage',
+      name: 'PnutGo Quest Board',
+      description: 'Daily challenges and quest missions for PnutGo companion hunting game',
+      mainEntity: {
+        '@type': 'ItemList',
+        name: 'Active Quests',
+        description: 'Available daily, weekly, and special event quests',
+        numberOfItems: '{{ allQuests.length }}',
+        itemListElement: [
+          {
+            '@type': 'Quest',
+            name: 'Daily Explorer Challenge',
+            description: 'Complete daily exploration tasks to earn experience and rewards',
+            difficulty: 'Beginner',
+            reward: {
+              '@type': 'Thing',
+              name: 'Experience Points',
+              value: '100-500 XP'
+            }
+          },
+          {
+            '@type': 'Quest',
+            name: 'Weekly Collector Mission',
+            description: 'Capture specific types of companions throughout the week',
+            difficulty: 'Intermediate',
+            reward: {
+              '@type': 'Thing',
+              name: 'Special Items',
+              value: 'Rare companion lures and badges'
+            }
+          },
+          {
+            '@type': 'Quest',
+            name: 'Special Event Quests',
+            description: 'Limited-time challenges with exclusive rewards',
+            difficulty: 'Advanced',
+            reward: {
+              '@type': 'Thing',
+              name: 'Exclusive Companions',
+              value: 'Event-specific legendary companions'
+            }
+          }
+        ]
+      },
+      potentialAction: [
+        {
+          '@type': 'CompleteAction',
+          target: {
+            '@type': 'Quest',
+            name: 'Daily Challenges'
+          },
+          result: {
+            '@type': 'Thing',
+            name: 'Quest Rewards'
+          }
+        },
+        {
+          '@type': 'TrackAction',
+          target: {
+            '@type': 'Thing',
+            name: 'Quest Progress'
+          }
+        }
+      ]
+    }),
+    createBreadcrumbStructuredData([
+      { name: 'PnutGo', url: 'https://pnutgo.com' },
+      { name: 'Game Dashboard', url: 'https://pnutgo.com/dashboard' },
+      { name: 'Quest Board', url: 'https://pnutgo.com/quests' }
+    ])
+  ]
+})
+
 const { apiClient } = useApiClient();
 
 // Quest state

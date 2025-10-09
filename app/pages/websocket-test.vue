@@ -220,6 +220,60 @@ definePageMeta({
   auth: true
 });
 
+// Import SEO composable
+const { setSEO, createWebPageStructuredData } = useSEO()
+
+// Set SEO meta tags for the websocket test page
+setSEO({
+  title: 'WebSocket Test Dashboard - Real-Time Features | PnutGo',
+  description: 'Technical testing dashboard for PnutGo real-time WebSocket features. Monitor spawn cycle updates, connection status, and real-time companion data synchronization. Developer and testing interface.',
+  keywords: [
+    'PnutGo websocket test',
+    'real-time testing',
+    'spawn cycle monitoring',
+    'websocket connection testing',
+    'real-time data sync',
+    'companion spawn testing',
+    'technical dashboard',
+    'developer testing tools',
+    'real-time game features',
+    'websocket debugging',
+    'live data monitoring',
+    'connection status testing'
+  ],
+  ogType: 'website',
+  twitterCard: 'summary',
+  robots: 'noindex, nofollow', // Testing page shouldn't be indexed
+  structuredData: createWebPageStructuredData({
+    '@type': 'WebPage',
+    name: 'PnutGo WebSocket Test Dashboard',
+    description: 'Technical testing interface for real-time WebSocket features and spawn monitoring',
+    mainEntity: {
+      '@type': 'SoftwareApplication',
+      name: 'WebSocket Test Dashboard',
+      description: 'Real-time monitoring and testing interface for PnutGo WebSocket connections',
+      applicationCategory: 'DeveloperApplication',
+      operatingSystem: 'Web Browser',
+      offers: {
+        '@type': 'Offer',
+        price: '0',
+        priceCurrency: 'USD'
+      },
+      featureList: [
+        'Real-time WebSocket connection monitoring',
+        'Spawn cycle update tracking',
+        'Event log management',
+        'Connection status visualization',
+        'Live data synchronization testing'
+      ]
+    },
+    audience: {
+      '@type': 'Audience',
+      audienceType: 'Developers and Testers'
+    }
+  })
+})
+
 const { user, logout } = useAuthentication();
 
 // Use composables

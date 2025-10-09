@@ -101,6 +101,44 @@
 </template>
 
 <script setup>
+// Import SEO composable
+const { setSEO, createWebPageStructuredData } = useSEO()
+
+// Set SEO meta tags for the simple login page
+setSEO({
+  title: 'Quick Login - PnutGo Companion Hunting Game',
+  description: 'Fast and secure login to PnutGo. Quick access to your companion collection, quest progress, and interactive map features. Start hunting companions instantly.',
+  keywords: [
+    'PnutGo quick login',
+    'fast login PnutGo',
+    'simple sign in',
+    'companion hunter quick access',
+    'instant login',
+    'mobile game quick signin',
+    'fast companion access',
+    'quick quest access',
+    'rapid map access',
+    'streamlined login',
+    'one-click signin PnutGo'
+  ],
+  ogType: 'website',
+  twitterCard: 'summary',
+  robots: 'noindex, nofollow', // Login pages shouldn't be indexed
+  structuredData: createWebPageStructuredData({
+    '@type': 'WebPage',
+    name: 'PnutGo Simple Login',
+    description: 'Streamlined login interface for quick access to PnutGo companion hunting game',
+    potentialAction: {
+      '@type': 'AuthorizeAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: 'https://pnutgo.com/simple-login',
+        actionPlatform: ['http://schema.org/MobileWebPlatform']
+      }
+    }
+  })
+})
+
 // Simple reactive data without TypeScript
 const form = reactive({
   username: 'user@example.com',  // Pre-filled for demo

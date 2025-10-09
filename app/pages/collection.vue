@@ -87,6 +87,90 @@ definePageMeta({
   auth: true
 });
 
+// Import SEO composable
+const { setSEO, createWebPageStructuredData, createBreadcrumbStructuredData } = useSEO()
+
+// Set SEO meta tags for the collection page
+setSEO({
+  title: 'My Companion Collection - View Captured Companions | PnutGo',
+  description: 'Browse your personal companion collection in PnutGo. View all captured companions, track capture statistics, and see your hunting progress. Manage your companion inventory and achievements.',
+  keywords: [
+    'PnutGo companion collection',
+    'captured companions',
+    'companion inventory',
+    'hunting progress',
+    'companion statistics',
+    'collection management',
+    'companion hunting achievements',
+    'captured creature collection',
+    'companion discovery history',
+    'hunting trophy collection',
+    'companion mastery progress',
+    'personal companion library',
+    'hunting success tracker',
+    'companion collection game'
+  ],
+  ogType: 'website',
+  twitterCard: 'summary_large_image',
+  robots: 'noindex, follow', // Private game content
+  structuredData: [
+    createWebPageStructuredData({
+      '@type': 'WebPage',
+      name: 'PnutGo Companion Collection',
+      description: 'Personal collection of captured companions in PnutGo hunting game',
+      mainEntity: {
+        '@type': 'CollectionPage',
+        name: 'Companion Collection',
+        description: 'Personal inventory of captured magical companions',
+        numberOfItems: '{{ companions.length }}',
+        about: {
+          '@type': 'VideoGame',
+          name: 'PnutGo',
+          gameItem: {
+            '@type': 'Thing',
+            name: 'Captured Companions',
+            description: 'Magical creatures discovered and captured during gameplay'
+          }
+        },
+        hasPart: [
+          {
+            '@type': 'Thing',
+            name: 'Fire Drake',
+            description: 'Rare fire-type companion with powerful abilities'
+          },
+          {
+            '@type': 'Thing',
+            name: 'Water Sprite', 
+            description: 'Common water-type companion perfect for beginners'
+          }
+        ]
+      },
+      potentialAction: [
+        {
+          '@type': 'ViewAction',
+          target: {
+            '@type': 'WebPage',
+            name: 'Companion Details'
+          }
+        },
+        {
+          '@type': 'SearchAction',
+          target: {
+            '@type': 'WebPage',
+            name: 'Find More Companions',
+            url: 'https://pnutgo.com/map'
+          }
+        }
+      ]
+    }),
+    createBreadcrumbStructuredData([
+      { name: 'PnutGo', url: 'https://pnutgo.com' },
+      { name: 'Game Dashboard', url: 'https://pnutgo.com/dashboard' },
+      { name: 'Companion Collection', url: 'https://pnutgo.com/collection' }
+    ])
+  ]
+})
+
 const { apiClient } = useApiClient();
 
 const loading = ref(false);

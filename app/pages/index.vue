@@ -22,5 +22,78 @@
 </template>
 
 <script setup>
-// Simple index page without TypeScript complications
+// Import SEO composable
+const { setSEO, createGameStructuredData, createOrganizationStructuredData } = useSEO()
+
+// Set SEO meta tags for the landing page
+setSEO({
+  title: 'PnutGo - Location-Based Companion Hunting Game',
+  description: 'Discover and capture magical companions in the real world with PnutGo. An immersive location-based mobile game featuring interactive maps, daily quests, and achievement badges. Start your adventure today!',
+  keywords: [
+    'PnutGo',
+    'location-based game', 
+    'companion hunting game',
+    'mobile AR game',
+    'GPS adventure game',
+    'real world gaming',
+    'interactive map game',
+    'companion collection',
+    'daily quests',
+    'achievement system',
+    'augmented reality',
+    'location-based entertainment',
+    'mobile adventure',
+    'companion discovery',
+    'real-time gameplay'
+  ],
+  ogType: 'website',
+  twitterCard: 'summary_large_image',
+  structuredData: [
+    createGameStructuredData({
+      '@type': 'VideoGame',
+      name: 'PnutGo',
+      alternateName: 'PnutGo: Companion Hunter',
+      description: 'An immersive location-based companion hunting game that combines real-world exploration with digital companion collection and quest completion.',
+      url: 'https://pnutgo.com',
+      image: 'https://pnutgo.com/pnutgo-og-image.jpg',
+      screenshot: [
+        'https://pnutgo.com/screenshots/map-view.jpg',
+        'https://pnutgo.com/screenshots/companion-capture.jpg',
+        'https://pnutgo.com/screenshots/quest-board.jpg'
+      ],
+      trailer: {
+        '@type': 'VideoObject',
+        name: 'PnutGo - Companion Hunting Adventure',
+        description: 'Experience the magic of companion hunting in the real world',
+        thumbnailUrl: 'https://pnutgo.com/video-thumbnail.jpg',
+        uploadDate: '2025-01-01'
+      },
+      gameItem: [
+        {
+          '@type': 'Thing',
+          name: 'Fire Drake',
+          description: 'A rare fire-type companion with powerful abilities'
+        },
+        {
+          '@type': 'Thing', 
+          name: 'Water Sprite',
+          description: 'A common water-type companion perfect for beginners'
+        }
+      ],
+      quest: [
+        {
+          '@type': 'Thing',
+          name: 'Daily Explorer Challenge',
+          description: 'Complete daily quests to earn experience and rewards'
+        },
+        {
+          '@type': 'Thing',
+          name: 'Badge Collection',
+          description: 'Unlock achievement badges by mastering different companion types'
+        }
+      ]
+    }),
+    createOrganizationStructuredData()
+  ]
+})
 </script>

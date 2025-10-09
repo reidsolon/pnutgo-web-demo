@@ -24,6 +24,45 @@
       </div>
     </div>
 
+    <!-- Location Tracking Status -->
+    <div
+      v-if="!mapLoading && isTracking"
+      class="absolute top-4 left-4 z-10"
+    >
+      <div class="glass-strong px-3 py-2 rounded-lg flex items-center space-x-2 bg-green-100/90 border border-green-300">
+        <Icon name="heroicons:signal" class="w-4 h-4 text-green-600 animate-pulse" />
+        <div class="text-xs">
+          <div class="font-medium text-green-700">Tracking Active</div>
+          <div class="text-green-600">
+            {{ distanceFromLastFetch.toFixed(0) }}m / {{ REFETCH_DISTANCE_THRESHOLD }}m
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Auto-refetch toggle -->
+    <div
+      v-if="!mapLoading"
+      class="absolute top-16 left-4 z-10"
+    >
+      <button
+        @click="autoRefetchEnabled = !autoRefetchEnabled"
+        :class="[
+          'px-3 py-2 rounded-lg glass-strong transition-all duration-200 flex items-center space-x-2 text-xs',
+          autoRefetchEnabled
+            ? 'bg-blue-100/90 border border-blue-300 text-blue-700'
+            : 'bg-gray-100/90 border border-gray-300 text-gray-600'
+        ]"
+        :title="autoRefetchEnabled ? 'Auto-refetch enabled' : 'Auto-refetch disabled'"
+      >
+        <Icon 
+          :name="autoRefetchEnabled ? 'heroicons:arrow-path' : 'heroicons:pause'" 
+          :class="['w-3 h-3', autoRefetchEnabled ? 'animate-spin' : '']" 
+        />
+        <span class="font-medium">Auto-fetch</span>
+      </button>
+    </div>
+
     <!-- Spawns Error -->
     <div
       v-if="!mapLoading && spawnsError"
@@ -32,6 +71,20 @@
       <div class="glass-strong px-4 py-2 rounded-full flex items-center space-x-2 bg-red-100/90 border border-red-300">
         <Icon name="heroicons:exclamation-triangle" class="w-4 h-4 text-red-600" />
         <span class="text-sm font-medium text-red-700">{{ spawnsError }}</span>
+      </div>
+    </div>
+
+    <!-- Location Tracking Error -->
+    <div
+      v-if="!mapLoading && trackingError"
+      class="absolute top-28 left-4 z-10"
+    >
+      <div class="glass-strong px-3 py-2 rounded-lg flex items-center space-x-2 bg-orange-100/90 border border-orange-300">
+        <Icon name="heroicons:exclamation-triangle" class="w-4 h-4 text-orange-600" />
+        <div class="text-xs">
+          <div class="font-medium text-orange-700">Tracking Error</div>
+          <div class="text-orange-600">{{ trackingError }}</div>
+        </div>
       </div>
     </div>
 
@@ -77,14 +130,28 @@
       </button>
     </div>
 
-    <!-- Locate Button -->
-    <button
-      @click="centerOnUser"
-      class="absolute bottom-4 right-4 z-10 w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-xl transition-all duration-200 transform hover:scale-105 flex items-center justify-center border-2 border-white/20"
-      title="Center on my location"
-    >
-      <Icon name="heroicons:map-pin" class="w-6 h-6" />
-    </button>
+    <!-- Locate Button with Distance Info -->
+    <div class="absolute bottom-4 right-4 z-10 flex flex-col items-end space-y-2">
+      <!-- Manual Refetch Button -->
+      <button
+        v-if="isTracking && distanceFromLastFetch > 10"
+        @click="manualRefetch"
+        class="px-3 py-2 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white shadow-lg transition-all duration-200 transform hover:scale-105 flex items-center space-x-2 text-xs border-2 border-white/20"
+        title="Manual refetch companions"
+      >
+        <Icon name="heroicons:arrow-path" class="w-3 h-3" />
+        <span>Refetch</span>
+      </button>
+      
+      <!-- Main Locate Button -->
+      <button
+        @click="centerOnUser"
+        class="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-xl transition-all duration-200 transform hover:scale-105 flex items-center justify-center border-2 border-white/20"
+        :title="isTracking ? `${distanceFromLastFetch.toFixed(0)}m moved` : 'Center on my location'"
+      >
+        <Icon name="heroicons:map-pin" class="w-6 h-6" />
+      </button>
+    </div>
 
     <!-- Companion Info Modal -->
     <Teleport to="body" v-if="selectedCompanion">
@@ -216,6 +283,21 @@ const {
   cleanupWebSocket
 } = useNearbySpawns();
 
+// Use location tracking composable
+const {
+  currentLocation,
+  distanceFromLastFetch,
+  isTracking,
+  trackingError,
+  shouldRefetchSpawns,
+  REFETCH_DISTANCE_THRESHOLD,
+  setCallbacks,
+  startTracking,
+  stopTracking,
+  markSpawnsFetched,
+  resetTracking
+} = useLocationTracking();
+
 // Map state
 const mapLoading = ref(true);
 const map = ref<any>(null);
@@ -239,8 +321,47 @@ interface SelectedCompanion {
 const selectedCompanion = ref<SelectedCompanion | null>(null);
 const capturing = ref(false);
 
+// Auto-refetch state
+const autoRefetchEnabled = ref(true);
+const lastRefetchTime = ref<number>(0);
+
 // Computed for getting mutable copy of spawns
 const mutableSpawns = computed(() => spawns.value);
+
+// Setup location tracking callbacks
+const setupLocationTracking = () => {
+  setCallbacks({
+    onLocationUpdate: (update) => {
+      console.log(`Location updated: ${update.position.lat.toFixed(6)}, ${update.position.lng.toFixed(6)} (accuracy: ${update.accuracy}m)`);
+      
+      // Emit location update to parent
+      emit('locationUpdate', update.position);
+    },
+    onRefetchRequired: async (location, distance) => {
+      if (!autoRefetchEnabled.value) return;
+      
+      // Prevent too frequent refetches (minimum 10 seconds between refetches)
+      const now = Date.now();
+      if (now - lastRefetchTime.value < 10000) {
+        console.log('Skipping refetch - too soon since last refetch');
+        return;
+      }
+      
+      console.log(`Auto-refetching spawns: moved ${distance.toFixed(1)}m from last fetch`);
+      lastRefetchTime.value = now;
+      
+      try {
+        await fetchNearbyCompanions(location);
+        markSpawnsFetched(location);
+      } catch (error) {
+        console.error('Auto-refetch failed:', error);
+      }
+    },
+    onTrackingError: (error) => {
+      console.error('Location tracking error:', error);
+    }
+  });
+};
 
 // Helper to format expiry time
 const formatExpiry = (expiresAt: string): string => {
@@ -351,6 +472,12 @@ const updateUserMarker = async () => {
     
     // Fetch nearby companions
     await fetchNearbyCompanions();
+    
+    // Start location tracking if enabled and not already tracking
+    if (props.locationEnabled && !isTracking.value) {
+      setupLocationTracking();
+      startTracking();
+    }
   } catch (error) {
     console.error('Failed to update user marker:', error);
   }
@@ -421,12 +548,28 @@ const centerOnUser = () => {
   }
 };
 
+// Manual refetch spawns
+const manualRefetch = async () => {
+  if (!currentLocation.value) return;
+  
+  console.log('Manual refetch triggered');
+  lastRefetchTime.value = Date.now();
+  
+  try {
+    await fetchNearbyCompanions(currentLocation.value);
+    markSpawnsFetched(currentLocation.value);
+  } catch (error) {
+    console.error('Manual refetch failed:', error);
+  }
+};
+
 // Fetch nearby companions from API
-const fetchNearbyCompanions = async () => {
-  if (!props.userLocation) return;
+const fetchNearbyCompanions = async (location?: { lat: number; lng: number }) => {
+  const targetLocation = location || props.userLocation;
+  if (!targetLocation) return;
 
   try {
-    await fetchNearbySpawns(props.userLocation.lat, props.userLocation.lng);
+    await fetchNearbySpawns(targetLocation.lat, targetLocation.lng);
     
     if (spawnsError.value) {
       console.error('Error fetching spawns:', spawnsError.value);
@@ -434,6 +577,11 @@ const fetchNearbyCompanions = async () => {
     }
 
     await updateCompanionMarkers();
+    
+    // Mark spawns as fetched at this location for tracking
+    if (!location) {
+      markSpawnsFetched(targetLocation);
+    }
   } catch (error) {
     console.error('Failed to fetch companions:', error);
   }
@@ -550,6 +698,16 @@ watch(() => props.userLocation, async (newLocation) => {
   }
 }, { deep: true });
 
+// Watch for location enabled/disabled
+watch(() => props.locationEnabled, (enabled) => {
+  if (enabled && !isTracking.value) {
+    setupLocationTracking();
+    startTracking();
+  } else if (!enabled && isTracking.value) {
+    stopTracking();
+  }
+});
+
 // Watch for spawns changes to update markers in real-time
 watch(spawns, async () => {
   if (map.value && !spawnsLoading.value) {
@@ -570,6 +728,7 @@ onMounted(async () => {
 // Cleanup on unmount
 onUnmounted(() => {
   cleanupWebSocket();
+  stopTracking();
   if (map.value) {
     map.value.remove();
     map.value = null;
