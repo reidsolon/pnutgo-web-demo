@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full h-full relative min-h-[700px]">
+  <div class="w-full h-full relative min-h-[70vh]">
     <div ref="mapContainer" class="w-full h-full rounded-lg absolute inset-0"></div>
     
     <!-- Loading Overlay -->
