@@ -23,7 +23,7 @@ export default defineNuxtConfig({
       authUrl: process.env.NUXT_AUTH_URL || 'http://localhost:3000',
       apiBaseUrl: process.env.API_BASE_URL || 'http://localhost:8000/api',
       wsHost: process.env.REVERB_HOST || 'localhost',
-      wsPort: process.env.REVERB_PORT || '8080',
+      wsPort: process.env.REVERB_PORT,
       wsKey: process.env.REVERB_APP_KEY || 'local-key'
     }
   },
