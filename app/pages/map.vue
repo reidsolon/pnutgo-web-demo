@@ -1,57 +1,83 @@
 <template>
   <div class="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
     <!-- Header -->
-    <header class="glass-strong p-4 border-b border-white/20 backdrop-blur-xl">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center space-x-3">
-          <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 via-purple-500 to-cyan-500 flex items-center justify-center shadow-lg">
-            <Icon name="heroicons:user" class="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h1 class="font-bold text-lg gradient-text">{{ user?.full_name || 'Trainer' }}</h1>
-            <p class="text-xs text-gray-500">Level 1 Companion Hunter</p>
-          </div>
-        </div>
-        
-        <div class="flex items-center space-x-2">
-          <!-- Location Status -->
-          <div
-            :class="[
-              'px-3 py-1 rounded-full text-xs font-medium flex items-center space-x-1 shadow-sm cursor-pointer',
-              locationEnabled 
-                ? 'bg-green-100 text-green-700 border border-green-200 hover:bg-green-150' 
-                : locationError 
-                  ? 'bg-red-100 text-red-700 border border-red-200 hover:bg-red-150'
-                  : 'bg-yellow-100 text-yellow-700 border border-yellow-200 hover:bg-yellow-150'
-            ]"
-            @click="getUserLocation"
-            :title="locationError || (locationEnabled ? 'Location active' : 'Click to enable location')"
-          >
-            <Icon
-              :name="locationEnabled ? 'heroicons:map-pin' : locationError ? 'heroicons:exclamation-triangle' : 'heroicons:arrow-path'"
-              :class="[
-                'w-4 h-4',
-                !locationEnabled && !locationError ? 'animate-spin' : ''
-              ]"
-            />
-            <span>
-              {{ 
-                locationEnabled 
-                  ? 'GPS Active' 
-                  : locationError 
-                    ? 'GPS Error' 
-                    : 'Getting GPS...' 
-              }}
-            </span>
+    <header class="relative overflow-hidden glass-strong border-b border-white/20">
+      <!-- Background with animated gradient -->
+      <div class="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-600 opacity-90"></div>
+      <div class="absolute inset-0 bg-gradient-to-br from-transparent via-white/5 to-white/10"></div>
+      
+      <!-- Animated background particles -->
+      <div class="absolute inset-0 overflow-hidden">
+        <div class="absolute top-2 left-10 w-2 h-2 bg-white/20 rounded-full animate-float-slow"></div>
+        <div class="absolute top-8 right-20 w-1 h-1 bg-white/30 rounded-full animate-float-fast"></div>
+        <div class="absolute bottom-4 left-1/4 w-1.5 h-1.5 bg-white/25 rounded-full animate-float-medium"></div>
+        <div class="absolute top-6 left-1/2 w-1 h-1 bg-white/20 rounded-full animate-float-slow"></div>
+      </div>
+      
+      <div class="relative z-10 p-6">
+        <div class="flex items-center justify-between">
+          <!-- User Profile Section -->
+          <div class="flex items-center space-x-4">
+            <!-- Enhanced Avatar -->
+            <div class="relative">
+              <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center shadow-xl">
+                <Icon name="heroicons:user" class="w-6 h-6 text-white" />
+              </div>
+              <!-- Online status indicator -->
+              <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white shadow-sm flex items-center justify-center">
+                <div class="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
+              </div>
+            </div>
+            
+            <!-- User Info -->
+            <div class="flex flex-col">
+              <h1 class="text-2xl font-bold text-white drop-shadow-sm">
+                {{ user?.full_name || 'Trainer' }}
+              </h1>
+            </div>
           </div>
           
-          <!-- Settings -->
-          <button
-            @click="logout"
-            class="p-2 rounded-full hover:bg-white/20 transition-all duration-200 hover:shadow-lg"
-          >
-            <Icon name="heroicons:arrow-right-on-rectangle" class="w-5 h-5 text-gray-600" />
-          </button>
+          <!-- GPS Status -->
+          <div class="flex items-center space-x-3">
+            <button
+              @click="getUserLocation"
+              :class="[
+                'flex items-center space-x-2 px-3 py-2 rounded-xl backdrop-blur-sm border transition-all duration-200 hover:scale-105',
+                locationEnabled 
+                  ? 'bg-green-500/20 border-green-400/50 text-green-100' 
+                  : locationError 
+                    ? 'bg-red-500/20 border-red-400/50 text-red-100'
+                    : 'bg-yellow-500/20 border-yellow-400/50 text-yellow-100'
+              ]"
+              :title="locationError || (locationEnabled ? 'Location active' : 'Click to enable location')"
+            >
+              <Icon
+                :name="locationEnabled ? 'heroicons:map-pin' : locationError ? 'heroicons:exclamation-triangle' : 'heroicons:arrow-path'"
+                :class="[
+                  'w-4 h-4',
+                  !locationEnabled && !locationError ? 'animate-spin' : ''
+                ]"
+              />
+              <span class="text-sm font-medium">
+                {{ 
+                  locationEnabled 
+                    ? 'Active' 
+                    : locationError 
+                      ? 'Error' 
+                      : 'Locating...' 
+                }}
+              </span>
+            </button>
+            
+            <!-- Logout Button -->
+            <button
+              @click="logout"
+              class="p-2 rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 hover:border-white/30 transition-all duration-200 hover:scale-105"
+              title="Logout"
+            >
+              <Icon name="heroicons:arrow-right-on-rectangle" class="w-5 h-5 text-white" />
+            </button>
+          </div>
         </div>
       </div>
     </header>
@@ -253,7 +279,58 @@ onMounted(() => {
   }
 }
 
+@keyframes float-slow {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translateY(-10px) rotate(180deg);
+    opacity: 0.6;
+  }
+}
+
+@keyframes float-medium {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px);
+    opacity: 0.4;
+  }
+  33% {
+    transform: translateY(-8px) translateX(4px);
+    opacity: 0.7;
+  }
+  66% {
+    transform: translateY(-4px) translateX(-4px);
+    opacity: 0.5;
+  }
+}
+
+@keyframes float-fast {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+    opacity: 0.2;
+  }
+  50% {
+    transform: translateY(-15px) scale(1.2);
+    opacity: 0.8;
+  }
+}
+
 .animate-slide-down {
   animation: slide-down 0.3s ease-out;
+}
+
+.animate-float-slow {
+  animation: float-slow 4s ease-in-out infinite;
+}
+
+.animate-float-medium {
+  animation: float-medium 3s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
+.animate-float-fast {
+  animation: float-fast 2s ease-in-out infinite;
+  animation-delay: 0.5s;
 }
 </style>
