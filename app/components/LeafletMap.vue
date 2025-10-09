@@ -36,14 +36,14 @@
     </div>
 
     <!-- Radius Toggle Controls -->
-    <div class="absolute top-4 right-4 z-10 space-y-2">
+    <div class="absolute top-4 right-4 z-10 flex space-x-2">
       <button
         @click="toggleRadiusVisibility('capture')"
         :class="[
-          'p-3 rounded-full glass transition-all duration-200',
+          'w-12 h-12 rounded-full glass transition-all duration-200 flex items-center justify-center shadow-lg border-2',
           visibleRadius.capture
-            ? 'bg-green-500/20 border-green-500 text-green-700'
-            : 'hover:bg-white/30'
+            ? 'bg-green-500/20 border-green-500 text-green-700 shadow-green-500/20'
+            : 'border-white/30 hover:bg-white/30 hover:border-white/50'
         ]"
         :title="`Capture Radius (${radiusInfo?.capture_radius_meters || 30}m)`"
       >
@@ -53,10 +53,10 @@
       <button
         @click="toggleRadiusVisibility('discovery')"
         :class="[
-          'p-3 rounded-full glass transition-all duration-200',
+          'w-12 h-12 rounded-full glass transition-all duration-200 flex items-center justify-center shadow-lg border-2',
           visibleRadius.discovery
-            ? 'bg-yellow-500/20 border-yellow-500 text-yellow-700'
-            : 'hover:bg-white/30'
+            ? 'bg-yellow-500/20 border-yellow-500 text-yellow-700 shadow-yellow-500/20'
+            : 'border-white/30 hover:bg-white/30 hover:border-white/50'
         ]"
         :title="`Discovery Radius (${radiusInfo?.discovery_radius_meters || 500}m)`"
       >
@@ -66,10 +66,10 @@
       <button
         @click="toggleRadiusVisibility('shadow')"
         :class="[
-          'p-3 rounded-full glass transition-all duration-200',
+          'w-12 h-12 rounded-full glass transition-all duration-200 flex items-center justify-center shadow-lg border-2',
           visibleRadius.shadow
-            ? 'bg-gray-500/20 border-gray-500 text-gray-700'
-            : 'hover:bg-white/30'
+            ? 'bg-gray-500/20 border-gray-500 text-gray-700 shadow-gray-500/20'
+            : 'border-white/30 hover:bg-white/30 hover:border-white/50'
         ]"
         :title="`Load Radius (${radiusInfo?.load_radius_meters || 700}m)`"
       >
@@ -77,14 +77,33 @@
       </button>
     </div>
 
-    <!-- Locate Button -->
-    <button
-      @click="centerOnUser"
-      class="absolute bottom-4 right-4 z-10 p-4 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg transition-all duration-200 transform hover:scale-105"
-      title="Center on my location"
-    >
-      <Icon name="heroicons:map-pin" class="w-6 h-6" />
-    </button>
+    <!-- Bottom Right Controls -->
+    <div class="absolute bottom-4 right-4 z-10 flex space-x-3">
+      <!-- Manual Refresh Button -->
+      <button
+        @click="manualRefresh"
+        :disabled="spawnsLoading"
+        class="w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 disabled:from-gray-400 disabled:to-gray-500 text-white shadow-xl transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 flex items-center justify-center border-2 border-white/20"
+        title="Refresh companions"
+      >
+        <Icon 
+          name="heroicons:arrow-path" 
+          :class="[
+            'w-5 h-5',
+            spawnsLoading ? 'animate-spin' : ''
+          ]" 
+        />
+      </button>
+
+      <!-- Locate Button -->
+      <button
+        @click="centerOnUser"
+        class="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-xl transition-all duration-200 transform hover:scale-105 flex items-center justify-center border-2 border-white/20"
+        title="Center on my location"
+      >
+        <Icon name="heroicons:map-pin" class="w-6 h-6" />
+      </button>
+    </div>
 
     <!-- Companion Info Modal -->
     <Teleport to="body" v-if="selectedCompanion">
@@ -419,6 +438,14 @@ const centerOnUser = () => {
     // Emit event to parent to get location
     emit('locationUpdate', { lat: 0, lng: 0 });
   }
+};
+
+// Manual refresh companions
+const manualRefresh = async () => {
+  if (!props.userLocation || spawnsLoading.value) return;
+  
+  console.log('Manual refresh triggered');
+  await fetchNearbyCompanions();
 };
 
 // Fetch nearby companions from API
