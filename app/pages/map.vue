@@ -149,10 +149,6 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({
-  auth: true
-});
-
 // Import SEO composable
 const { setSEO, createWebPageStructuredData, createBreadcrumbStructuredData } = useSEO()
 
