@@ -160,7 +160,7 @@ export const useNearbySpawns = () => {
           places_address: spawnData.places_address,
           distance: distance,
           capturable: radiusInfo.value ? distance <= radiusInfo.value.capture_radius_meters : false,
-          show_silhouette: radiusInfo.value ? distance <= radiusInfo.value.discovery_radius_meters : false,
+          show_silhouette: radiusInfo.value ? distance > radiusInfo.value.discovery_radius_meters : false,
           spawned_at: spawnData.spawned_at,
           expires_at: spawnData.expires_at,
           is_active: spawnData.is_active,
