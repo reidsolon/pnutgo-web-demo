@@ -121,6 +121,7 @@
 definePageMeta({
   layout: false,
   auth: false,
+  middleware: 'guest'
 });
 
 // Import SEO composable
