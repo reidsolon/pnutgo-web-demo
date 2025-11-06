@@ -128,12 +128,23 @@ export const useNearbySpawns = () => {
         // Calculate distance if user location is available
         let distance = 0;
         if (userLocation.value) {
+          console.log('Calculating distance:', {
+            userLat: userLocation.value.lat,
+            userLng: userLocation.value.lng,
+            spawnLat: spawnData.lat,
+            spawnLng: spawnData.lng,
+            spawnLatType: typeof spawnData.lat,
+            spawnLngType: typeof spawnData.lng,
+          });
+          
           distance = calculateDistance(
             userLocation.value.lat,
             userLocation.value.lng,
-            spawnData.lat,
-            spawnData.lng
+            parseFloat(spawnData.lat),
+            parseFloat(spawnData.lng)
           );
+          
+          console.log('Calculated distance:', distance, 'meters');
         }
 
         // Check if spawn is within load radius
