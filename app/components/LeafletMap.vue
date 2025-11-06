@@ -712,16 +712,19 @@ const updateCompanionMarkers = async () => {
           : cycle.companion.view_image?.thumb_url;
 
         const markerHtml = `
-          <div class="companion-marker transform hover:scale-110 transition-all duration-200 cursor-pointer relative">
-            <div class="w-12 h-12 rounded-full bg-gradient-to-br ${rarityColors[cycle.companion.rarity] || rarityColors.common} p-1 shadow-xl">
-              <div class="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
-                ${imageUrl 
-                  ? `<img src="${imageUrl}" alt="${cycle.companion.name}" class="w-full h-full object-cover ${isSilhouette ? 'opacity-70' : ''}" />`
-                  : `<div class="text-xl">${isSilhouette ? '❓' : '✨'}</div>`
-                }
+          <div class="companion-marker-wrapper">
+            <div class="spawn-id-label">${spawn.id}</div>
+            <div class="companion-marker transform hover:scale-110 transition-all duration-200 cursor-pointer relative">
+              <div class="w-12 h-12 rounded-full bg-gradient-to-br ${rarityColors[cycle.companion.rarity] || rarityColors.common} p-1 shadow-xl">
+                <div class="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
+                  ${imageUrl 
+                    ? `<img src="${imageUrl}" alt="${cycle.companion.name}" class="w-full h-full object-cover ${isSilhouette ? 'opacity-70' : ''}" />`
+                    : `<div class="text-xl">${isSilhouette ? '❓' : '✨'}</div>`
+                  }
+                </div>
               </div>
+              ${isCapturable ? '<div class="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse border-2 border-white"></div>' : ''}
             </div>
-            ${isCapturable ? '<div class="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse border-2 border-white"></div>' : ''}
           </div>
         `;
 
@@ -825,6 +828,26 @@ onUnmounted(() => {
 :deep(.companion-icon) {
   background: none !important;
   border: none !important;
+}
+
+.companion-marker-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.spawn-id-label {
+  background: rgba(0, 0, 0, 0.75);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 :deep(.leaflet-container) {
