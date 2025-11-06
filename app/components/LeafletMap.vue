@@ -1,6 +1,6 @@
 <template>
-  <div class="w-full h-full relative min-h-[70vh]">
-    <div ref="mapContainer" class="w-full h-full rounded-lg absolute inset-0"></div>
+  <div class="w-full h-full relative">
+    <div ref="mapContainer" class="w-full h-full absolute inset-0"></div>
     
     <!-- Loading Overlay -->
     <div
@@ -149,104 +149,16 @@
       </button>
     </div>
 
-    <!-- Companion Info Modal -->
-    <Teleport to="body" v-if="selectedCompanion">
-      <div class="fixed inset-0 bg-white/50 backdrop-blur-sm z-50 flex items-end p-4">
-        <div class="glass-strong rounded-2xl overflow-hidden w-full max-w-sm mx-auto transform transition-all duration-300 animate-slide-up">
-          <!-- Companion Image Header -->
-          <div class="relative w-full h-48 bg-gradient-to-br from-purple-500 to-pink-500">
-            <img 
-              v-if="selectedCompanion.spawn.show_silhouette && selectedCompanion.cycle.companion.silhouette_image"
-              :src="selectedCompanion.cycle.companion.silhouette_image.thumb_url"
-              :alt="selectedCompanion.cycle.companion.name"
-              class="w-full h-full object-contain opacity-70 p-4"
-            />
-            <img 
-              v-else-if="!selectedCompanion.spawn.show_silhouette && selectedCompanion.cycle.companion.view_image"
-              :src="selectedCompanion.cycle.companion.view_image.thumb_url"
-              :alt="selectedCompanion.cycle.companion.name"
-              class="w-full h-full object-contain p-4"
-            />
-            <div v-else class="w-full h-full flex items-center justify-center">
-              <Icon name="heroicons:sparkles" class="w-20 h-20 text-white" />
-            </div>
-            
-            <!-- Close Button -->
-            <button
-              @click="selectedCompanion = null"
-              class="absolute top-4 right-4 p-2 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm transition-colors"
-            >
-              <Icon name="heroicons:x-mark" class="w-5 h-5 text-white" />
-            </button>
-          </div>
-          
-          <!-- Companion Info Content -->
-          <div class="p-6">
-            <!-- Name and Rarity -->
-            <div class="mb-4">
-              <h3 class="font-bold text-xl gradient-text mb-1">
-                {{ selectedCompanion.spawn.show_silhouette ? '???' : selectedCompanion.cycle.companion.name }}
-              </h3>
-              <p class="text-sm text-gray-500 capitalize">{{ selectedCompanion.cycle.companion.rarity_label }}</p>
-            </div>
-            
-            <!-- Description (only if not silhouette) -->
-            <p v-if="!selectedCompanion.spawn.show_silhouette" class="text-sm text-gray-600 mb-4">
-              {{ selectedCompanion.cycle.companion.description }}
-            </p>
-            <p v-else class="text-sm text-gray-600 mb-4 italic">
-              Get closer to reveal this companion's identity...
-            </p>
-            
-            <div class="space-y-3 mb-4">
-              <div class="flex items-center justify-between text-sm">
-                <span class="text-gray-600">Distance:</span>
-                <span class="font-medium">{{ Math.round(selectedCompanion.spawn.distance) }}m away</span>
-              </div>
-              
-              <div class="flex items-center justify-between text-sm">
-                <span class="text-gray-600">Remaining Captures:</span>
-                <span class="font-medium">{{ selectedCompanion.cycle.remaining_captures }}/{{ selectedCompanion.cycle.capture_limit }}</span>
-              </div>
-              
-              <div class="flex items-center justify-between text-sm">
-                <span class="text-gray-600">Expires:</span>
-                <span class="font-medium">{{ formatExpiry(selectedCompanion.cycle.expires_at) }}</span>
-              </div>
-            </div>
-            
-            <div class="flex items-center justify-between">
-              <div class="text-sm">
-                <span
-                  :class="[
-                    'px-3 py-1 rounded-full text-xs font-medium',
-                    selectedCompanion.spawn.capturable
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-yellow-100 text-yellow-700'
-                  ]"
-                >
-                  {{ selectedCompanion.spawn.capturable ? 'Capturable' : 'Too Far' }}
-                </span>
-              </div>
-              
-              <button
-                v-if="selectedCompanion.spawn.capturable"
-                @click="captureCompanion(selectedCompanion.spawn.id)"
-                :disabled="capturing"
-                class="btn-gradient text-sm px-6 py-2 disabled:opacity-50 flex items-center space-x-2"
-              >
-                <Icon
-                  v-if="capturing"
-                  name="heroicons:arrow-path"
-                  class="w-4 h-4 animate-spin"
-                />
-                <span>{{ capturing ? 'Capturing...' : 'Capture' }}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </Teleport>
+    <!-- Companion Detail Modal -->
+    <SpawnDetailModal
+      v-if="selectedCompanion"
+      :spawn="selectedCompanion.spawn"
+      :cycle="selectedCompanion.cycle"
+      :capturing="capturing"
+      @close="selectedCompanion = null"
+      @capture="captureCompanion"
+      @mark-spotted="markAsSpotted"
+    />
   </div>
 </template>
 
@@ -325,24 +237,6 @@ const capturing = ref(false);
 // Computed for getting mutable copy of spawns
 const mutableSpawns = computed(() => spawns.value);
 
-// Helper to format expiry time
-const formatExpiry = (expiresAt: string): string => {
-  const now = new Date();
-  const expiry = new Date(expiresAt);
-  const diff = expiry.getTime() - now.getTime();
-  
-  if (diff < 0) return 'Expired';
-  
-  const minutes = Math.floor(diff / 1000 / 60);
-  const hours = Math.floor(minutes / 60);
-  
-  if (hours > 0) {
-    return `${hours}h ${minutes % 60}m`;
-  }
-  
-  return `${minutes}m`;
-};
-
 // Initialize map
 const initMap = async () => {
   if (!mapContainer.value) {
@@ -363,6 +257,8 @@ const initMap = async () => {
     map.value = L.default.map(mapContainer.value, {
       center: [14.5995, 120.9842], // Manila default
       zoom: 16,
+      minZoom: 13,
+      maxZoom: 19,
       zoomControl: false,
       attributionControl: false
     });
@@ -775,6 +671,25 @@ const captureCompanion = async (spawnId: number) => {
     emit('companionCaptured', spawnId);
   } catch (error) {
     console.error('Failed to capture companion:', error);
+  } finally {
+    capturing.value = false;
+  }
+};
+
+// Mark as spotted
+const markAsSpotted = async (spawnId: number) => {
+  capturing.value = true;
+  
+  try {
+    // Mock mark as spotted - replace with actual API call
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    selectedCompanion.value = null;
+    
+    // You can emit a different event or show a success message
+    console.log('Marked spawn as spotted:', spawnId);
+  } catch (error) {
+    console.error('Failed to mark as spotted:', error);
   } finally {
     capturing.value = false;
   }

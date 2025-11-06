@@ -2,6 +2,13 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
+@font-face {
+  font-family: "ThemeFont";
+  src: url("@/assets/fonts/Baloo_Bhaijaan_2/static/BalooBhaijaan2-ExtraBold.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+}
+
 /* Custom Base Styles */
 @layer base {
   body {
@@ -9,6 +16,7 @@
     background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 50%, #fdf2f8 100%);
     min-height: 100vh;
     background-attachment: fixed;
+    font-family: 'ThemeFont', sans-serif;
   }
 
   * {
