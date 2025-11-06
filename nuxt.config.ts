@@ -38,7 +38,8 @@ export default defineNuxtConfig({
         { name: 'theme-color', content: '#3B82F6' }
       ],
       link: [
-        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+        { rel: 'icon', type: 'image/png', href: '/assets/images/app-icon.png' },
+        { rel: 'apple-touch-icon', href: '/assets/images/app-icon.png' },
         { rel: 'stylesheet', href: 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css' }
       ]
     }
