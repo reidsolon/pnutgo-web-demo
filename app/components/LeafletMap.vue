@@ -75,6 +75,50 @@
       >
         <Icon name="heroicons:moon" class="w-5 h-5" />
       </button>
+
+      <!-- Grid Toggle Button -->
+      <button
+        @click="toggleGrid"
+        :class="[
+          'w-12 h-12 rounded-full glass transition-all duration-200 flex items-center justify-center shadow-lg border-2',
+          showGrid
+            ? 'bg-blue-500/20 border-blue-500 text-blue-700 shadow-blue-500/20'
+            : 'border-white/30 hover:bg-white/30 hover:border-white/50'
+        ]"
+        title="Toggle Grid"
+      >
+        <Icon name="heroicons:squares-2x2" class="w-5 h-5" />
+      </button>
+    </div>
+
+    <!-- Grid Info Panel (bottom left when active) -->
+    <div
+      v-if="showGrid && currentGridInfo"
+      class="absolute bottom-4 left-4 z-50 bg-white/95 backdrop-blur-sm rounded-xl shadow-2xl p-4 w-72 border-2 border-blue-500/20"
+    >
+      <h3 class="text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
+        <Icon name="heroicons:squares-2x2" class="w-4 h-4 text-blue-500" />
+        Grid Information
+      </h3>
+      <div class="space-y-1 text-xs text-gray-600">
+        <div><strong>Grid X:</strong> {{ currentGridInfo.gridX }}</div>
+        <div><strong>Grid Y:</strong> {{ currentGridInfo.gridY }}</div>
+        <div><strong>Cell ID:</strong> {{ currentGridInfo.cellId }}</div>
+        <div><strong>Cell Center:</strong> {{ currentGridInfo.center.lat.toFixed(6) }}, {{ currentGridInfo.center.lng.toFixed(6) }}</div>
+        <div><strong>Cell Size:</strong> ~{{ Math.round(currentGridInfo.cellSize * 111000) }}m</div>
+        <div><strong>Load Radius:</strong> {{ radiusInfo?.load_radius_meters || 0 }}m</div>
+        <div><strong>Visible Cells:</strong> {{ gridLayers.length }}</div>
+      </div>
+      <div class="mt-3 flex items-center gap-2">
+        <div class="flex items-center gap-1">
+          <div class="w-3 h-3 border-2 border-blue-500 bg-blue-500/20"></div>
+          <span class="text-xs text-gray-600">Your Cell</span>
+        </div>
+        <div class="flex items-center gap-1">
+          <div class="w-3 h-3 border-2 border-gray-400 bg-gray-400/20"></div>
+          <span class="text-xs text-gray-600">Adjacent</span>
+        </div>
+      </div>
     </div>
 
     <!-- Bottom Right Controls -->
@@ -235,6 +279,15 @@ const {
   cleanupWebSocket
 } = useNearbySpawns();
 
+// Use grid coordinates composable
+const { 
+  getGridCoordinates, 
+  getAdjacentGridCells, 
+  gridToLocation,
+  getGridCellId,
+  GRID_CELL_SIZE
+} = useGridCoordinates();
+
 // Map state
 const mapLoading = ref(true);
 const map = ref<any>(null);
@@ -242,6 +295,17 @@ const userMarker = ref<any>(null);
 const radiusCircles = ref<{ [key: string]: any }>({});
 const companionMarkers = ref<any[]>([]);
 const mapContainer = ref<HTMLElement | null>(null);
+
+// Grid state
+const showGrid = ref(false);
+const gridLayers = ref<any[]>([]);
+const currentGridInfo = ref<{
+  gridX: number;
+  gridY: number;
+  cellId: string;
+  center: { lat: number; lng: number };
+  cellSize: number;
+} | null>(null);
 
 // Radius visibility
 const visibleRadius = reactive({
@@ -430,6 +494,149 @@ const toggleRadiusVisibility = (type: keyof typeof visibleRadius) => {
   updateRadiusCircles();
 };
 
+// Toggle grid visibility
+const toggleGrid = () => {
+  showGrid.value = !showGrid.value;
+  if (showGrid.value && props.userLocation) {
+    drawGrid();
+  } else {
+    clearGrid();
+  }
+};
+
+// Draw grid on map
+const drawGrid = async () => {
+  if (!map.value || !props.userLocation || !radiusInfo.value) return;
+
+  try {
+    const L = await import('leaflet');
+    
+    // Calculate current grid coordinates
+    const gridCoords = getGridCoordinates(props.userLocation.lat, props.userLocation.lng);
+    const cellId = getGridCellId(gridCoords.gridX, gridCoords.gridY);
+    const cellCenter = gridToLocation(gridCoords.gridX, gridCoords.gridY);
+    
+    // Update grid info
+    currentGridInfo.value = {
+      gridX: gridCoords.gridX,
+      gridY: gridCoords.gridY,
+      cellId,
+      center: cellCenter,
+      cellSize: GRID_CELL_SIZE
+    };
+    
+    // Clear existing grid
+    clearGrid();
+    
+    // Calculate how many cells to show based on load radius
+    const loadRadiusMeters = radiusInfo.value.load_radius_meters;
+    const cellSizeMeters = GRID_CELL_SIZE * 111000; // Convert degrees to meters (approximate)
+    const cellsToShow = Math.ceil(loadRadiusMeters / cellSizeMeters);
+    
+    // Generate cells within the load radius
+    const cells: Array<{ gridX: number; gridY: number }> = [];
+    for (let dx = -cellsToShow; dx <= cellsToShow; dx++) {
+      for (let dy = -cellsToShow; dy <= cellsToShow; dy++) {
+        const cellX = gridCoords.gridX + dx;
+        const cellY = gridCoords.gridY + dy;
+        
+        // Calculate cell center
+        const cellCenterCoords = gridToLocation(cellX, cellY);
+        
+        // Calculate distance from user location to cell center
+        const distance = calculateDistance(
+          props.userLocation.lat,
+          props.userLocation.lng,
+          cellCenterCoords.lat,
+          cellCenterCoords.lng
+        );
+        
+        // Only include cells within load radius
+        if (distance <= loadRadiusMeters) {
+          cells.push({ gridX: cellX, gridY: cellY });
+        }
+      }
+    }
+    
+    console.log(`Drawing ${cells.length} grid cells within ${loadRadiusMeters}m radius`);
+    
+    cells.forEach(cell => {
+      const isUserCell = cell.gridX === gridCoords.gridX && cell.gridY === gridCoords.gridY;
+      
+      // Calculate cell bounds
+      const minLat = cell.gridY * GRID_CELL_SIZE;
+      const maxLat = (cell.gridY + 1) * GRID_CELL_SIZE;
+      const minLng = cell.gridX * GRID_CELL_SIZE;
+      const maxLng = (cell.gridX + 1) * GRID_CELL_SIZE;
+      
+      const bounds = [
+        [minLat, minLng],
+        [maxLat, maxLng],
+      ];
+      
+      // Create rectangle
+      const rectangle = L.default.rectangle(bounds, {
+        color: isUserCell ? '#3B82F6' : '#9CA3AF',
+        weight: isUserCell ? 3 : 2,
+        fillColor: isUserCell ? '#3B82F6' : '#9CA3AF',
+        fillOpacity: isUserCell ? 0.15 : 0.05,
+        dashArray: isUserCell ? undefined : '5, 5',
+      }).addTo(map.value);
+      
+      // Add tooltip
+      const cellCenterCoords = gridToLocation(cell.gridX, cell.gridY);
+      const distanceFromUser = calculateDistance(
+        props.userLocation.lat,
+        props.userLocation.lng,
+        cellCenterCoords.lat,
+        cellCenterCoords.lng
+      );
+      
+      rectangle.bindTooltip(
+        `
+          <div class="text-xs">
+            <strong>${isUserCell ? 'Your Cell' : 'Adjacent Cell'}</strong><br>
+            Grid: ${cell.gridX}, ${cell.gridY}<br>
+            Center: ${cellCenterCoords.lat.toFixed(6)}, ${cellCenterCoords.lng.toFixed(6)}<br>
+            Distance: ${Math.round(distanceFromUser)}m
+          </div>
+        `,
+        { sticky: true }
+      );
+      
+      gridLayers.value.push(rectangle);
+    });
+  } catch (error) {
+    console.error('Failed to draw grid:', error);
+  }
+};
+
+// Helper function to calculate distance between two points (Haversine formula)
+const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+  const R = 6371000; // Earth's radius in meters
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
+// Clear grid from map
+const clearGrid = () => {
+  if (!map.value) return;
+  
+  gridLayers.value.forEach(layer => {
+    if (map.value) {
+      map.value.removeLayer(layer);
+    }
+  });
+  gridLayers.value = [];
+  currentGridInfo.value = null;
+};
+
 // Center map on user
 const centerOnUser = () => {
   if (props.userLocation && map.value) {
@@ -574,6 +781,11 @@ const captureCompanion = async (spawnId: number) => {
 watch(() => props.userLocation, async (newLocation) => {
   if (newLocation && map.value) {
     await updateUserMarker();
+    
+    // Redraw grid if it's visible
+    if (showGrid.value) {
+      await drawGrid();
+    }
   }
 }, { deep: true });
 

@@ -9,6 +9,69 @@ declare global {
   }
 }
 
+// Region definitions
+const REGIONS = {
+  'north-america': {
+    lat_min: 15.0,
+    lat_max: 72.0,
+    lng_min: -168.0,
+    lng_max: -52.0,
+  },
+  'south-america': {
+    lat_min: -56.0,
+    lat_max: 15.0,
+    lng_min: -82.0,
+    lng_max: -34.0,
+  },
+  'europe': {
+    lat_min: 36.0,
+    lat_max: 71.0,
+    lng_min: -10.0,
+    lng_max: 40.0,
+  },
+  'africa': {
+    lat_min: -35.0,
+    lat_max: 37.0,
+    lng_min: -18.0,
+    lng_max: 52.0,
+  },
+  'asia-pacific': {
+    lat_min: -10.0,
+    lat_max: 55.0,
+    lng_min: 60.0,
+    lng_max: 180.0,
+  },
+  'southeast-asia': {
+    lat_min: -10.0,
+    lat_max: 25.0,
+    lng_min: 95.0,
+    lng_max: 140.0,
+  },
+  'oceania': {
+    lat_min: -47.0,
+    lat_max: -10.0,
+    lng_min: 110.0,
+    lng_max: 180.0,
+  },
+} as const;
+
+/**
+ * Get region based on user coordinates
+ */
+const getRegionFromCoordinates = (lat: number, lng: number): string => {
+  for (const [region, bounds] of Object.entries(REGIONS)) {
+    if (
+      lat >= bounds.lat_min &&
+      lat <= bounds.lat_max &&
+      lng >= bounds.lng_min &&
+      lng <= bounds.lng_max
+    ) {
+      return region;
+    }
+  }
+  return 'global'; // Default fallback
+};
+
 export const useWebSocket = () => {
   const config = useRuntimeConfig();
   const { token } = useAuthentication();
@@ -16,6 +79,8 @@ export const useWebSocket = () => {
   const echo = ref<Echo | null>(null);
   const connected = ref(false);
   const error = ref<string | null>(null);
+  const currentRegion = ref<string | null>(null);
+  const activeSpawnChannel = ref<any>(null);
 
   // Initialize Echo connection
   const connect = () => {
@@ -72,31 +137,61 @@ export const useWebSocket = () => {
   };
 
   // Listen for spawn events
-  const listenForSpawns = (callback: (data: any) => void) => {
+  const listenForSpawns = (lat: number, lng: number, callback: (data: any) => void) => {
     if (!echo.value) return;
 
-    // Listen to public spawn-cycles channel for real-time updates
-    const cyclesChannel = echo.value.channel('spawn-cycles');
+    // Determine region based on coordinates
+    const region = getRegionFromCoordinates(lat, lng);
+    const channelName = `spawn-cycles.${region}`;
 
-    console.log('📡 Subscribing to spawn-cycles channel...');
+    // If we're already subscribed to this region, don't resubscribe
+    if (currentRegion.value === region && activeSpawnChannel.value) {
+      console.log(`📡 Already subscribed to ${channelName}`);
+      return () => {
+        if (activeSpawnChannel.value) {
+          activeSpawnChannel.value.stopListening('.spawn-cycle.created');
+          echo.value?.leaveChannel(channelName);
+          activeSpawnChannel.value = null;
+          currentRegion.value = null;
+        }
+      };
+    }
+
+    // Cleanup previous channel if exists
+    if (activeSpawnChannel.value && currentRegion.value) {
+      const oldChannelName = `spawn-cycles.${currentRegion.value}`;
+      console.log(`🔄 Switching from ${oldChannelName} to ${channelName}`);
+      activeSpawnChannel.value.stopListening('.spawn-cycle.created');
+      echo.value?.leaveChannel(oldChannelName);
+    }
+
+    // Subscribe to the region-specific channel
+    activeSpawnChannel.value = echo.value.channel(channelName);
+    currentRegion.value = region;
+
+    console.log(`📡 Subscribing to ${channelName} channel...`);
     
     // Debug: Log when channel is subscribed
-    cyclesChannel.subscription.bind('pusher:subscription_succeeded', () => {
-      console.log('✅ Successfully subscribed to spawn-cycles channel');
+    activeSpawnChannel.value.subscription.bind('pusher:subscription_succeeded', () => {
+      console.log(`✅ Successfully subscribed to ${channelName} channel`);
     });
 
-    cyclesChannel.subscription.bind('pusher:subscription_error', (error: any) => {
-      console.error('❌ Failed to subscribe to spawn-cycles channel:', error);
+    activeSpawnChannel.value.subscription.bind('pusher:subscription_error', (error: any) => {
+      console.error(`❌ Failed to subscribe to ${channelName} channel:`, error);
     });
     
-    cyclesChannel.listen('.spawn-cycle.created', (data: any) => {
-      console.log('🎯 Spawn cycle update received:', data);
-      callback({ type: 'spawn:created', data });
+    activeSpawnChannel.value.listen('.spawn-cycle.created', (data: any) => {
+      console.log(`🎯 Spawn cycle update received from ${region}:`, data);
+      callback({ type: 'spawn:created', data, region });
     });
 
     return () => {
-      cyclesChannel.stopListening('.spawn-cycle.created');
-      echo.value?.leaveChannel('spawn-cycles');
+      if (activeSpawnChannel.value) {
+        activeSpawnChannel.value.stopListening('.spawn-cycle.created');
+        echo.value?.leaveChannel(channelName);
+        activeSpawnChannel.value = null;
+        currentRegion.value = null;
+      }
     };
   };
 
@@ -162,11 +257,13 @@ export const useWebSocket = () => {
     echo: readonly(echo),
     connected: readonly(connected),
     error: readonly(error),
+    currentRegion: readonly(currentRegion),
     connect,
     disconnect,
     listenForSpawns,
     listenForQuestUpdates,
     listenForBadgeUpdates,
-    getActiveChannels
+    getActiveChannels,
+    getRegionFromCoordinates,
   };
 };

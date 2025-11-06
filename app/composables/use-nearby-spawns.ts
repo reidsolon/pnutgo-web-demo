@@ -72,7 +72,7 @@ export interface NearbySpawnsResponse {
 
 export const useNearbySpawns = () => {
   const { apiClient } = useApiClient();
-  const { listenForSpawns, connected } = useWebSocket();
+  const { listenForSpawns, connected, currentRegion } = useWebSocket();
 
   // State
   const spawns = useState<NearbySpawn[]>('nearby-spawns', () => []);
@@ -80,6 +80,30 @@ export const useNearbySpawns = () => {
   const error = useState<string | null>('nearby-spawns-error', () => null);
   const radiusInfo = useState<RadiusInfo | null>('nearby-spawns-radius-info', () => null);
   const wsCleanup = ref<(() => void) | null>(null);
+  const userLocation = ref<{ lat: number; lng: number } | null>(null);
+
+  /**
+   * Calculate distance between two coordinates using Haversine formula
+   * @param lat1 - Latitude of first point
+   * @param lng1 - Longitude of first point
+   * @param lat2 - Latitude of second point
+   * @param lng2 - Longitude of second point
+   * @returns Distance in meters
+   */
+  const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+    const R = 6371e3; // Earth's radius in meters
+    const φ1 = (lat1 * Math.PI) / 180;
+    const φ2 = (lat2 * Math.PI) / 180;
+    const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+    const Δλ = ((lng2 - lng1) * Math.PI) / 180;
+
+    const a =
+      Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c; // Distance in meters
+  };
 
   /**
    * Handle real-time spawn events
@@ -92,40 +116,62 @@ export const useNearbySpawns = () => {
     if (event.type === 'spawn:created') {
       const payload = event.data;
       
-      if (!payload.spawn) {
-        console.warn('Received spawn cycle update without spawn data:', payload);
+      if (!payload.spawns || !Array.isArray(payload.spawns)) {
+        console.warn('Received spawn cycle update without spawns array data:', payload);
         return;
       }
 
-      const newSpawn: NearbySpawn = {
-        id: payload.spawn.id,
-        lat: payload.spawn.lat,
-        lng: payload.spawn.lng,
-        places_address: payload.spawn.places_address,
-        distance: 0, // Will be calculated by backend in next fetch if needed
-        capturable: false, // Default, will be updated based on distance
-        show_silhouette: false, // Default
-        spawned_at: payload.spawn.spawned_at,
-        expires_at: payload.spawn.expires_at,
-        is_active: payload.spawn.is_active,
-        active_cycles: payload.spawn.active_cycles || [],
-      };
+      console.log(payload)
 
-      // Check if spawn already exists
-      const existingIndex = spawns.value.findIndex((s) => s.id === newSpawn.id);
+      // Process each spawn in the array
+      payload.spawns.forEach((spawnData: any) => {
+        // Calculate distance if user location is available
+        let distance = 0;
+        if (userLocation.value) {
+          distance = calculateDistance(
+            userLocation.value.lat,
+            userLocation.value.lng,
+            spawnData.lat,
+            spawnData.lng
+          );
+        }
 
-      if (existingIndex !== -1) {
-        // Update existing spawn
-        spawns.value[existingIndex] = {
-          ...spawns.value[existingIndex],
-          ...newSpawn,
+        // Check if spawn is within load radius
+        if (radiusInfo.value && distance > radiusInfo.value.load_radius_meters) {
+          console.log(`Spawn ${spawnData.id} is outside load radius (${distance.toFixed(2)}m > ${radiusInfo.value.load_radius_meters}m), skipping`);
+          return;
+        }
+
+        const newSpawn: NearbySpawn = {
+          id: spawnData.id,
+          lat: spawnData.lat,
+          lng: spawnData.lng,
+          places_address: spawnData.places_address,
+          distance: distance,
+          capturable: radiusInfo.value ? distance <= radiusInfo.value.capture_radius_meters : false,
+          show_silhouette: radiusInfo.value ? distance <= radiusInfo.value.discovery_radius_meters : false,
+          spawned_at: spawnData.spawned_at,
+          expires_at: spawnData.expires_at,
+          is_active: spawnData.is_active,
+          active_cycles: spawnData.active_cycles || [],
         };
-        console.log('Updated existing spawn:', newSpawn.id);
-      } else {
-        // Add new spawn
-        spawns.value.push(newSpawn);
-        console.log('Added new spawn:', newSpawn.id);
-      }
+
+        // Check if spawn already exists
+        const existingIndex = spawns.value.findIndex((s) => s.id === newSpawn.id);
+
+        if (existingIndex !== -1) {
+          // Update existing spawn
+          spawns.value[existingIndex] = {
+            ...spawns.value[existingIndex],
+            ...newSpawn,
+          };
+          console.log('Updated existing spawn:', newSpawn.id);
+        } else {
+          // Add new spawn
+          spawns.value.push(newSpawn);
+          console.log('Added new spawn:', newSpawn.id);
+        }
+      });
 
       // Remove inactive spawns
       spawns.value = spawns.value.filter((spawn) => spawn.is_active);
@@ -136,12 +182,22 @@ export const useNearbySpawns = () => {
    * Initialize WebSocket listener for spawn events
    */
   const initializeWebSocket = (): void => {
+    if (!userLocation.value) {
+      console.log('Cannot initialize WebSocket: No user location available');
+      return;
+    }
+
     if (wsCleanup.value) {
       console.log('WebSocket listener already initialized');
       return;
     }
 
-    const cleanup = listenForSpawns(handleSpawnEvent);
+    const cleanup = listenForSpawns(
+      userLocation.value.lat,
+      userLocation.value.lng,
+      handleSpawnEvent
+    );
+    
     if (cleanup) {
       wsCleanup.value = cleanup;
       console.log('WebSocket listener initialized for spawn events');
@@ -168,6 +224,9 @@ export const useNearbySpawns = () => {
     loading.value = true;
     error.value = null;
 
+    // Store user location for WebSocket subscription
+    userLocation.value = { lat, lng };
+
     try {
       const response = await apiClient<NearbySpawnsResponse>('/nearby/spawns', {
         method: 'GET',
@@ -183,6 +242,10 @@ export const useNearbySpawns = () => {
         
         // Initialize WebSocket listener after first fetch
         if (connected.value) {
+          // Cleanup old connection if region changed
+          if (wsCleanup.value) {
+            cleanupWebSocket();
+          }
           initializeWebSocket();
         }
       } else {
@@ -241,7 +304,11 @@ export const useNearbySpawns = () => {
 
   // Watch for WebSocket connection and initialize listener
   watch(connected, (isConnected) => {
-    if (isConnected && spawns.value.length > 0) {
+    if (isConnected && spawns.value.length > 0 && userLocation.value) {
+      // Cleanup and reinitialize to ensure we're on the correct region
+      if (wsCleanup.value) {
+        cleanupWebSocket();
+      }
       initializeWebSocket();
     } else if (!isConnected) {
       cleanupWebSocket();
@@ -259,6 +326,8 @@ export const useNearbySpawns = () => {
     loading: readonly(loading),
     error: readonly(error),
     radiusInfo: readonly(radiusInfo),
+    currentRegion: readonly(currentRegion),
+    userLocation: readonly(userLocation),
     
     // Computed
     capturableSpawns,
