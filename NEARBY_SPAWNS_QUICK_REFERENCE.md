@@ -73,9 +73,9 @@ Radius settings from the API.
 
 ```typescript
 if (radiusInfo.value) {
-  console.log(radiusInfo.value.capture_radius_meters); // e.g., 30
-  console.log(radiusInfo.value.discovery_radius_meters); // e.g., 500
-  console.log(radiusInfo.value.load_radius_meters); // e.g., 700
+  console.log(radiusInfo.value.capture_radius_meters); // e.g., 50
+  console.log(radiusInfo.value.discovery_radius_meters); // e.g., 2000
+  console.log(radiusInfo.value.load_radius_meters); // e.g., 5000
 }
 ```
 

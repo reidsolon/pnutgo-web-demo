@@ -45,7 +45,7 @@
             ? 'bg-green-500/20 border-green-500 text-green-700 shadow-green-500/20'
             : 'border-white/30 hover:bg-white/30 hover:border-white/50'
         ]"
-        :title="`Capture Radius (${radiusInfo?.capture_radius_meters || 30}m)`"
+        :title="`Capture Radius (${radiusInfo?.capture_radius_meters || 50}m)`"
       >
         <Icon name="heroicons:hand-raised" class="w-5 h-5" />
       </button>
@@ -58,7 +58,7 @@
             ? 'bg-yellow-500/20 border-yellow-500 text-yellow-700 shadow-yellow-500/20'
             : 'border-white/30 hover:bg-white/30 hover:border-white/50'
         ]"
-        :title="`Discovery Radius (${radiusInfo?.discovery_radius_meters || 500}m)`"
+        :title="`Discovery Radius (${radiusInfo?.discovery_radius_meters || 2000}m)`"
       >
         <Icon name="heroicons:eye" class="w-5 h-5" />
       </button>
@@ -71,7 +71,7 @@
             ? 'bg-gray-500/20 border-gray-500 text-gray-700 shadow-gray-500/20'
             : 'border-white/30 hover:bg-white/30 hover:border-white/50'
         ]"
-        :title="`Load Radius (${radiusInfo?.load_radius_meters || 700}m)`"
+        :title="`Load Radius (${radiusInfo?.load_radius_meters || 5000}m)`"
       >
         <Icon name="heroicons:moon" class="w-5 h-5" />
       </button>

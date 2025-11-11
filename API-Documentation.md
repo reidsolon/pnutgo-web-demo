@@ -553,7 +553,7 @@ GET /map/companions?lat=14.5995&lng=120.9842&radius=0.005
 
 **Visibility States**:
 - `capturable` - Within capture radius (~50m), can be captured
-- `shadow` - Within shadow radius (~500m), visible but not capturable
+- `shadow` - Within shadow radius (~2000m), visible but not capturable
 - `hidden` - Outside visibility range, not returned in response
 
 #### Capture Companion
@@ -789,7 +789,7 @@ POST /quests/{quest_id}/complete
 - **Longitude**: -180 to 180 degrees
 - **Radius**: 0.001 to 0.1 degrees (~100m to 10km)
 - **Capture Radius**: ~50 meters from spawn location
-- **Shadow Radius**: ~500 meters visibility range
+- **Shadow Radius**: ~2000 meters visibility range
 
 ### Time Formats
 All timestamps are in ISO 8601 format with UTC timezone:
