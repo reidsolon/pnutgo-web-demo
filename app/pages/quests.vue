@@ -1,25 +1,11 @@
 <template>
-  <div class="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-slate-900 dark:to-indigo-950">
-    <!-- Header -->
-    <header class="glass-strong p-6 border-b border-white/20">
-      <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-2xl font-bold gradient-text">Quest Board</h1>
-          <p class="text-sm text-gray-600 dark:text-gray-400">Complete quests to earn rewards</p>
-        </div>
-        
-        <div class="flex items-center space-x-4">
-          <!-- Quest Points -->
-          <div class="text-right">
-            <p class="text-sm text-gray-500">Quest Points</p>
-            <p class="text-xl font-bold gradient-text">{{ totalQuestPoints }}</p>
-          </div>
-        </div>
-      </div>
-    </header>
+  <NuxtLayout>
+    <template #header>
+      <AppHeader title="Quest Board" />
+    </template>
 
     <!-- Content -->
-    <div class="flex-1 p-6 overflow-y-auto">
+    <div class="w-full h-full overflow-y-auto p-6">
       <!-- Loading State -->
       <div v-if="loading" class="space-y-4">
         <div v-for="i in 3" :key="i" class="loading-pulse h-32 rounded-2xl"></div>
@@ -110,35 +96,12 @@
       </div>
     </div>
 
-    <!-- Bottom Navigation -->
-    <nav class="glass-strong border-t border-white/20 p-4">
-      <div class="flex items-center justify-around">
-        <NuxtLink to="/map" class="nav-item">
-          <Icon name="heroicons:map" class="w-6 h-6 mb-1" />
-          <span class="text-xs font-medium">Map</span>
-        </NuxtLink>
-        
-        <NuxtLink to="/quests" class="nav-item active">
-          <Icon name="heroicons:clipboard-document-list" class="w-6 h-6 mb-1" />
-          <span class="text-xs font-medium">Quests</span>
-        </NuxtLink>
-        
-        <NuxtLink to="/badges" class="nav-item">
-          <Icon name="heroicons:trophy" class="w-6 h-6 mb-1" />
-          <span class="text-xs font-medium">Badges</span>
-        </NuxtLink>
-        
-        <NuxtLink to="/collection" class="nav-item">
-          <Icon name="heroicons:squares-2x2" class="w-6 h-6 mb-1" />
-          <span class="text-xs font-medium">Collection</span>
-        </NuxtLink>
-      </div>
-    </nav>
-  </div>
+  </NuxtLayout>
 </template>
 
 <script setup lang="ts">
 definePageMeta({
+  layout: 'default',
   auth: true
 });
 

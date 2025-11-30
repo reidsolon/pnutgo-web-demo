@@ -2,7 +2,7 @@
   <header class="relative overflow-visible bg-white border-b border-gray-100 z-50">
     <div class="relative z-10 px-4 py-3">
       <div class="flex items-center justify-between gap-3">
-        <!-- Search Text with Decorative Background -->
+        <!-- Page Title with Decorative Background -->
         <div class="flex-1 max-w-2xl">
           <div
             class="relative overflow-hidden bg-gradient-to-r from-amber-50 via-lime-50 to-emerald-50 rounded-3xl px-6 py-4"
@@ -13,7 +13,7 @@
               <div class="w-6 h-10 bg-emerald-200 rounded-full"></div>
             </div>
 
-            <h1 class="text-2xl font-bold text-gray-900 relative z-10">Search</h1>
+            <h1 class="text-2xl font-bold text-gray-900 relative z-10">{{ title }}</h1>
           </div>
         </div>
 
@@ -100,59 +100,61 @@
 
         <!-- Menu Items -->
         <div class="py-2">
-          <!-- GPS Status Item -->
-          <button
-            @click="handleLocationClick"
-            class="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors duration-150"
-          >
-            <div
-              :class="[
-                'w-8 h-8 rounded-lg flex items-center justify-center',
-                locationEnabled
-                  ? 'bg-green-100'
-                  : locationError
-                  ? 'bg-red-100'
-                  : 'bg-yellow-100',
-              ]"
+          <!-- GPS Status Item (Only show if location features are enabled) -->
+          <template v-if="showLocationFeatures">
+            <button
+              @click="handleLocationClick"
+              class="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors duration-150"
             >
-              <Icon
-                :name="
-                  locationEnabled
-                    ? 'heroicons:map-pin'
-                    : locationError
-                    ? 'heroicons:exclamation-triangle'
-                    : 'heroicons:arrow-path'
-                "
+              <div
                 :class="[
-                  'w-4 h-4',
+                  'w-8 h-8 rounded-lg flex items-center justify-center',
                   locationEnabled
-                    ? 'text-green-600'
+                    ? 'bg-green-100'
                     : locationError
-                    ? 'text-red-600'
-                    : 'text-yellow-600',
-                  !locationEnabled && !locationError ? 'animate-spin' : '',
-                ]"
-              />
-            </div>
-            <div class="flex-1 text-left">
-              <p class="text-sm font-medium text-gray-900">GPS Status</p>
-              <p
-                :class="[
-                  'text-xs',
-                  locationEnabled
-                    ? 'text-green-600'
-                    : locationError
-                    ? 'text-red-600'
-                    : 'text-yellow-600',
+                    ? 'bg-red-100'
+                    : 'bg-yellow-100',
                 ]"
               >
-                {{ locationEnabled ? 'Active' : locationError ? 'Error' : 'Locating...' }}
-              </p>
-            </div>
-          </button>
+                <Icon
+                  :name="
+                    locationEnabled
+                      ? 'heroicons:map-pin'
+                      : locationError
+                      ? 'heroicons:exclamation-triangle'
+                      : 'heroicons:arrow-path'
+                  "
+                  :class="[
+                    'w-4 h-4',
+                    locationEnabled
+                      ? 'text-green-600'
+                      : locationError
+                      ? 'text-red-600'
+                      : 'text-yellow-600',
+                    !locationEnabled && !locationError ? 'animate-spin' : '',
+                  ]"
+                />
+              </div>
+              <div class="flex-1 text-left">
+                <p class="text-sm font-medium text-gray-900">GPS Status</p>
+                <p
+                  :class="[
+                    'text-xs',
+                    locationEnabled
+                      ? 'text-green-600'
+                      : locationError
+                      ? 'text-red-600'
+                      : 'text-yellow-600',
+                  ]"
+                >
+                  {{ locationEnabled ? 'Active' : locationError ? 'Error' : 'Locating...' }}
+                </p>
+              </div>
+            </button>
 
-          <!-- Divider -->
-          <div class="h-px bg-gray-100 my-2"></div>
+            <!-- Divider -->
+            <div class="h-px bg-gray-100 my-2"></div>
+          </template>
 
           <!-- Logout Item -->
           <button
@@ -174,13 +176,17 @@
 
 <script setup lang="ts">
 interface Props {
+  title?: string;
   locationEnabled?: boolean;
   locationError?: string | null;
+  showLocationFeatures?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  title: 'Search',
   locationEnabled: false,
   locationError: null,
+  showLocationFeatures: false,
 });
 
 const emit = defineEmits<{

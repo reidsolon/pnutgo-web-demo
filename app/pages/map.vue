@@ -1,62 +1,38 @@
 <template>
-  <div class="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-    <!-- Header -->
-    <MapHeader
-      :location-enabled="locationEnabled"
-      :location-error="locationError"
-      @location-update="getUserLocation"
-      @logout="logout"
-    />
+  <NuxtLayout>
+    <template #header>
+      <AppHeader
+        title="Search"
+        :location-enabled="locationEnabled"
+        :location-error="locationError"
+        :show-location-features="true"
+        @location-update="getUserLocation"
+        @logout="logout"
+      />
+    </template>
 
     <!-- Map Container -->
-    <div class="flex-1 relative overflow-hidden min-h-0">
-      <ClientOnly>
-        <div class="w-full h-full absolute inset-0">
-          <LeafletMap
-            v-if="mapReady"
-            :user-location="userLocation"
-            :location-enabled="locationEnabled"
-            @location-update="getUserLocation"
-            @companion-captured="handleCompanionCaptured"
-          />
-        </div>
-        <template #fallback>
-          <div class="w-full h-full bg-gradient-to-br from-blue-100 via-purple-50 to-cyan-100 flex items-center justify-center">
-            <div class="glass-strong p-8 rounded-2xl text-center">
-              <Icon name="heroicons:map" class="w-16 h-16 text-blue-500 mx-auto mb-4 animate-pulse" />
-              <p class="text-xl font-bold gradient-text mb-2">Loading Map...</p>
-              <p class="text-gray-600 mb-4">Preparing your companion hunting experience...</p>
-            </div>
-          </div>
-        </template>
-      </ClientOnly>
-    </div>
-
-    <!-- Bottom Navigation -->
-    <nav class="glass-strong border-t border-white/20 p-4 backdrop-blur-xl">
-      <div class="flex items-center justify-around">
-        <NuxtLink to="/map" class="nav-item active">
-          <Icon name="heroicons:map" class="w-6 h-6 mb-1" />
-          <span class="text-xs font-medium">Map</span>
-        </NuxtLink>
-        
-        <NuxtLink to="/quests" class="nav-item">
-          <Icon name="heroicons:clipboard-document-list" class="w-6 h-6 mb-1" />
-          <span class="text-xs font-medium">Quests</span>
-        </NuxtLink>
-        
-        <NuxtLink to="/badges" class="nav-item">
-          <Icon name="heroicons:trophy" class="w-6 h-6 mb-1" />
-          <span class="text-xs font-medium">Badges</span>
-        </NuxtLink>
-        
-        <NuxtLink to="/collection" class="nav-item">
-          <Icon name="heroicons:squares-2x2" class="w-6 h-6 mb-1" />
-          <span class="text-xs font-medium">Collection</span>
-        </NuxtLink>
+    <ClientOnly>
+      <div class="w-full h-full absolute inset-0">
+        <LeafletMap
+          v-if="mapReady"
+          :user-location="userLocation"
+          :location-enabled="locationEnabled"
+          @location-update="getUserLocation"
+          @companion-captured="handleCompanionCaptured"
+        />
       </div>
-    </nav>
-    
+      <template #fallback>
+        <div class="w-full h-full bg-gradient-to-br from-blue-100 via-purple-50 to-cyan-100 flex items-center justify-center">
+          <div class="glass-strong p-8 rounded-2xl text-center">
+            <Icon name="heroicons:map" class="w-16 h-16 text-blue-500 mx-auto mb-4 animate-pulse" />
+            <p class="text-xl font-bold gradient-text mb-2">Loading Map...</p>
+            <p class="text-gray-600 mb-4">Preparing your companion hunting experience...</p>
+          </div>
+        </div>
+      </template>
+    </ClientOnly>
+
     <!-- Success Toast -->
     <Teleport to="body" v-if="showSuccessToast">
       <div class="fixed top-4 right-4 z-50 glass-strong p-4 rounded-xl shadow-xl animate-slide-down">
@@ -71,10 +47,14 @@
         </div>
       </div>
     </Teleport>
-  </div>
+  </NuxtLayout>
 </template>
 
 <script setup lang="ts">
+definePageMeta({
+  layout: 'default'
+})
+
 // Import SEO composable
 const { setSEO, createWebPageStructuredData, createBreadcrumbStructuredData } = useSEO()
 

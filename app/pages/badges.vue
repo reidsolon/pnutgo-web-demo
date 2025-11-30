@@ -1,22 +1,12 @@
 <template>
-  <div class="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-slate-900 dark:to-indigo-950">
-    <!-- Header -->
-    <header class="glass-strong p-6 border-b border-white/20">
-      <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-2xl font-bold gradient-text">Badge Collection</h1>
-          <p class="text-sm text-gray-600 dark:text-gray-400">Track your companion mastery</p>
-        </div>
-        
-        <div class="text-right">
-          <p class="text-sm text-gray-500">Total Badges</p>
-          <p class="text-xl font-bold gradient-text">{{ earnedBadges.length }}/{{ allBadges.length }}</p>
-        </div>
-      </div>
-    </header>
+  <NuxtLayout>
+    <template #header>
+      <AppHeader title="Badge Collection" />
+    </template>
 
-    <!-- Filter Tabs -->
-    <div class="px-6 py-4">
+    <div class="w-full h-full overflow-y-auto">
+      <!-- Filter Tabs -->
+      <div class="px-6 py-4">
       <div class="flex space-x-1 rounded-xl bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm p-1">
         <button
           v-for="tab in filterTabs"
@@ -37,8 +27,8 @@
       </div>
     </div>
 
-    <!-- Content -->
-    <div class="flex-1 px-6 pb-6 overflow-y-auto">
+      <!-- Content -->
+      <div class="flex-1 px-6 pb-6">
       <!-- Loading State -->
       <div v-if="loading" class="grid grid-cols-2 gap-4">
         <div v-for="i in 6" :key="i" class="loading-pulse h-40 rounded-2xl"></div>
@@ -190,35 +180,13 @@
       </div>
     </div>
 
-    <!-- Bottom Navigation -->
-    <nav class="glass-strong border-t border-white/20 p-4">
-      <div class="flex items-center justify-around">
-        <NuxtLink to="/map" class="nav-item">
-          <Icon name="heroicons:map" class="w-6 h-6 mb-1" />
-          <span class="text-xs font-medium">Map</span>
-        </NuxtLink>
-        
-        <NuxtLink to="/quests" class="nav-item">
-          <Icon name="heroicons:clipboard-document-list" class="w-6 h-6 mb-1" />
-          <span class="text-xs font-medium">Quests</span>
-        </NuxtLink>
-        
-        <NuxtLink to="/badges" class="nav-item active">
-          <Icon name="heroicons:trophy" class="w-6 h-6 mb-1" />
-          <span class="text-xs font-medium">Badges</span>
-        </NuxtLink>
-        
-        <NuxtLink to="/collection" class="nav-item">
-          <Icon name="heroicons:squares-2x2" class="w-6 h-6 mb-1" />
-          <span class="text-xs font-medium">Collection</span>
-        </NuxtLink>
-      </div>
-    </nav>
-  </div>
+    </div>
+  </NuxtLayout>
 </template>
 
 <script setup lang="ts">
 definePageMeta({
+  layout: 'default',
   auth: true
 });
 

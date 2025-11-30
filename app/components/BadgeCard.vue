@@ -103,27 +103,7 @@
 </template>
 
 <script setup lang="ts">
-interface Badge {
-  id: number;
-  name: string;
-  description: string;
-  level?: number;
-  requirement?: {
-    type: string;
-    count: number;
-    companion_type?: string;
-    companion_rarity?: string;
-    time_limit?: number;
-  };
-  companion?: {
-    id: number;
-    name: string;
-    rarity: string;
-  } | null;
-  earned_at?: string | null;
-  created_at: string;
-  updated_at: string;
-}
+import type { Badge } from '~/types';
 
 interface Props {
   badge: Badge;

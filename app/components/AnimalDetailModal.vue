@@ -15,7 +15,9 @@
       <div class="flex justify-center pt-4 sm:pt-6 pb-2 sm:pb-4 px-4">
         <div class="relative">
           <div class="bg-gradient-to-r from-green-400 to-green-500 rounded-full px-6 sm:px-8 py-2 sm:py-3 shadow-lg border-3 sm:border-4 border-white">
-            <h1 class="text-2xl sm:text-3xl font-black text-gray-900 tracking-wide">SPOTTED!</h1>
+            <h1 class="text-2xl sm:text-3xl font-black text-gray-900 tracking-wide">
+              {{ animal.is_captured ? 'COLLECTED!' : 'IN THE WILD!' }}
+            </h1>
           </div>
           <div class="absolute -left-2 top-1/2 -translate-y-1/2 w-2 h-2 sm:w-3 sm:h-3 bg-white rounded-full"></div>
           <div class="absolute -right-2 top-1/2 -translate-y-1/2 w-2 h-2 sm:w-3 sm:h-3 bg-white rounded-full"></div>
@@ -61,15 +63,15 @@
               <!-- Companion Image -->
               <div class="relative z-10 mb-8 sm:mb-12">
                 <img 
-                  v-if="spawn.show_silhouette && cycle.companion.silhouette_image"
-                  :src="cycle.companion.silhouette_image.thumb_url"
-                  :alt="cycle.companion.name"
-                  class="w-48 h-48 sm:w-64 sm:h-64 object-contain drop-shadow-2xl"
+                  v-if="!animal.is_captured && animal.silhouette_image?.url"
+                  :src="animal.silhouette_image.url"
+                  :alt="animal.name"
+                  class="w-48 h-48 sm:w-64 sm:h-64 object-contain drop-shadow-2xl filter brightness-0"
                 />
                 <img 
-                  v-else-if="!spawn.show_silhouette && cycle.companion.view_image"
-                  :src="cycle.companion.view_image.thumb_url"
-                  :alt="cycle.companion.name"
+                  v-else-if="animal.is_captured && animal.view_image?.url"
+                  :src="animal.view_image.url"
+                  :alt="animal.name"
                   class="w-48 h-48 sm:w-64 sm:h-64 object-contain drop-shadow-2xl"
                 />
                 <div v-else class="w-48 h-48 sm:w-64 sm:h-64 flex items-center justify-center">
@@ -78,7 +80,7 @@
                 
                 <!-- Lightning bolt decoration (if companion has lightning trait) -->
                 <div 
-                  v-if="!spawn.show_silhouette && cycle.companion.traits?.toLowerCase().includes('lightning')" 
+                  v-if="animal.is_captured && animal.traits?.toLowerCase().includes('lightning')" 
                   class="absolute bottom-6 sm:bottom-8 -right-3 sm:-right-4 w-12 h-18 sm:w-16 sm:h-24"
                 >
                   <svg viewBox="0 0 24 48" fill="none" class="w-full h-full drop-shadow-lg">
@@ -93,25 +95,25 @@
           <div class="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl border-3 sm:border-4 border-gray-100 mb-4 sm:mb-6">
             <!-- Rarity Badge -->
             <div class="flex items-center mb-3 sm:mb-4">
-              <div class="inline-flex items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-bold shadow-md">
+              <div 
+                class="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-bold shadow-md"
+                :class="getRarityBadgeClass(animal.rarity)"
+              >
                 <Icon name="heroicons:fire" class="w-4 h-4 sm:w-5 sm:h-5" />
-                <span class="uppercase tracking-wide">{{ cycle.companion.rarity_label }}</span>
+                <span class="uppercase tracking-wide">{{ animal.rarity_label }}</span>
               </div>
             </div>
 
             <!-- Companion Name -->
             <h2 class="text-2xl sm:text-4xl font-black text-gray-900 mb-4 sm:mb-6">
-              {{ spawn.show_silhouette ? '???' : cycle.companion.name }}
+              {{ animal.name }}
             </h2>
 
             <!-- Personality Section -->
             <div class="mb-4 sm:mb-6">
               <h3 class="text-sm sm:text-base font-bold text-gray-600 mb-1.5 sm:mb-2">Personality</h3>
               <p class="text-base sm:text-lg font-bold text-gray-900 leading-relaxed">
-                {{ spawn.show_silhouette 
-                  ? 'Get closer to discover this companion\'s personality...' 
-                  : cycle.companion.personality || cycle.companion.description || 'A mysterious companion with hidden secrets'
-                }}
+                {{ animal.personality || animal.description || 'A mysterious companion with hidden secrets' }}
               </p>
             </div>
 
@@ -119,74 +121,22 @@
             <div class="mb-4 sm:mb-6">
               <h3 class="text-sm sm:text-base font-bold text-gray-600 mb-1.5 sm:mb-2">Traits</h3>
               <p class="text-base sm:text-lg font-bold text-gray-900 leading-relaxed">
-                {{ spawn.show_silhouette 
-                  ? 'Mysterious traits await discovery...' 
-                  : cycle.companion.traits || 'Unique characteristics to be discovered'
-                }}
+                {{ animal.traits || 'Unique characteristics to be discovered' }}
               </p>
             </div>
 
-            <!-- Additional Info (Distance, Captures, etc.) -->
-            <div class="pt-4 sm:pt-6 border-t-2 border-gray-100 space-y-2 sm:space-y-3">
+            <!-- Additional Info (Captures, etc.) -->
+            <div v-if="animal.is_captured" class="pt-4 sm:pt-6 border-t-2 border-gray-100 space-y-2 sm:space-y-3">
               <div class="flex items-center justify-between text-xs sm:text-sm">
-                <span class="text-gray-600 font-semibold">Distance:</span>
-                <span class="font-bold text-gray-900">{{ Math.round(spawn.distance) }}m away</span>
+                <span class="text-gray-600 font-semibold">Times Captured:</span>
+                <span class="font-bold text-gray-900">{{ animal.times_captured }}</span>
               </div>
               
               <div class="flex items-center justify-between text-xs sm:text-sm">
-                <span class="text-gray-600 font-semibold">Remaining Captures:</span>
-                <span class="font-bold text-gray-900">{{ cycle.remaining_captures }}/{{ cycle.capture_limit }}</span>
-              </div>
-              
-              <div class="flex items-center justify-between text-xs sm:text-sm">
-                <span class="text-gray-600 font-semibold">Expires:</span>
-                <span class="font-bold text-gray-900">{{ formatExpiry(cycle.expires_at) }}</span>
+                <span class="text-gray-600 font-semibold">Total in Collection:</span>
+                <span class="font-bold text-gray-900">{{ animal.capture_count }}</span>
               </div>
             </div>
-          </div>
-
-          <!-- Error Message -->
-          <div
-            v-if="error"
-            class="w-full bg-red-50 border-2 border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm font-semibold"
-          >
-            {{ error }}
-          </div>
-
-          <!-- Action Button -->
-          <button
-            v-if="spawn.capturable"
-            @click="$emit('capture', cycle.id)"
-            :disabled="capturing"
-            class="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-black text-lg sm:text-xl py-4 sm:py-5 rounded-full shadow-2xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] disabled:hover:scale-100 flex items-center justify-center gap-2 sm:gap-3"
-          >
-            <Icon
-              v-if="capturing"
-              name="heroicons:arrow-path"
-              class="w-5 h-5 sm:w-6 sm:h-6 animate-spin"
-            />
-            <span v-if="capturing">Capturing...</span>
-            <span v-else>Capture</span>
-          </button>
-          <button
-            v-else-if="!spawn.show_silhouette"
-            @click="$emit('mark-spotted', spawn.id)"
-            :disabled="capturing"
-            class="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-black text-lg sm:text-xl py-4 sm:py-5 rounded-full shadow-2xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] disabled:hover:scale-100 flex items-center justify-center gap-2 sm:gap-3"
-          >
-            <Icon
-              v-if="capturing"
-              name="heroicons:arrow-path"
-              class="w-5 h-5 sm:w-6 sm:h-6 animate-spin"
-            />
-            <span v-if="capturing">Marking...</span>
-            <span v-else>Mark as Spotted</span>
-          </button>
-          <div
-            v-else
-            class="w-full bg-gray-300 text-gray-600 font-black text-lg sm:text-xl py-4 sm:py-5 rounded-full text-center"
-          >
-            Too Far Away
           </div>
         </div>
       </div>
@@ -195,42 +145,20 @@
 </template>
 
 <script setup lang="ts">
-import type { NearbySpawn, ActiveCycle } from '~/composables/use-nearby-spawns';
+import type { Animal } from '~/types';
+import { getRarityClass } from '~/types';
 
 interface Props {
-  spawn: NearbySpawn;
-  cycle: ActiveCycle;
-  capturing?: boolean;
-  error?: string | null;
+  animal: Animal;
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  capturing: false
-});
+defineProps<Props>();
 
 const emit = defineEmits<{
   close: [];
-  capture: [spawnCycleId: number];
-  'mark-spotted': [spawnId: number];
 }>();
 
-// Helper to format expiry time
-const formatExpiry = (expiresAt: string): string => {
-  const now = new Date();
-  const expiry = new Date(expiresAt);
-  const diff = expiry.getTime() - now.getTime();
-  
-  if (diff < 0) return 'Expired';
-  
-  const minutes = Math.floor(diff / 1000 / 60);
-  const hours = Math.floor(minutes / 60);
-  
-  if (hours > 0) {
-    return `${hours}h ${minutes % 60}m`;
-  }
-  
-  return `${minutes}m`;
-};
+const getRarityBadgeClass = getRarityClass;
 </script>
 
 <style scoped>

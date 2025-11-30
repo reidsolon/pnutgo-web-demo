@@ -149,28 +149,7 @@
 </template>
 
 <script setup lang="ts">
-interface Quest {
-  id: number;
-  title: string;
-  description: string;
-  type: 'daily' | 'weekly' | 'event';
-  status: string;
-  progress?: {
-    current: number;
-    required: number;
-  };
-  reward?: {
-    experience?: number;
-    items?: string[];
-  };
-  expires_at?: string | null;
-  completed: boolean;
-  requirement: {
-    action: string;
-    count: number;
-    companion_type?: string;
-  };
-}
+import type { Quest } from '~/types';
 
 interface Props {
   quest: Quest;

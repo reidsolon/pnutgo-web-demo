@@ -1,15 +1,11 @@
-// Types for nearby spawns API
-export interface MediaImage {
-  id: number;
-  name: string;
-  file_name: string;
+import type { RarityKey, RarityLabel, MediaImage } from '~/types';
+
+// Extended MediaImage with additional fields for API response
+export interface MediaImageExtended extends MediaImage {
   collection_name: string;
   mime_type: string;
   size: number;
   created_at: string;
-  url: string;
-  thumb_url: string;
-  responsive_url: string;
 }
 
 export interface Companion {
@@ -18,10 +14,10 @@ export interface Companion {
   description: string;
   personality: string;
   traits: string;
-  rarity: 'common' | 'rare' | 'epic' | 'legendary';
-  rarity_label: string;
-  view_image: MediaImage;
-  silhouette_image: MediaImage;
+  rarity: RarityKey;
+  rarity_label: RarityLabel;
+  view_image: MediaImageExtended;
+  silhouette_image: MediaImageExtended;
 }
 
 export interface ActiveCycle {
@@ -291,6 +287,46 @@ export const useNearbySpawns = () => {
   };
 
   /**
+   * Capture a companion spawn
+   * @param spawnCycleId - The active cycle ID to capture
+   * @param lat - User's current latitude
+   * @param lng - User's current longitude
+   * @returns Object with success status, data, and error message
+   */
+  const captureSpawn = async (
+    spawnCycleId: number,
+    lat: number,
+    lng: number
+  ): Promise<{ success: boolean; data?: any; error?: string }> => {
+    try {
+      const response: any = await apiClient(`/spawn/${spawnCycleId}/capture`, {
+        method: 'POST',
+        body: { lat, lng },
+      });
+
+      // Remove the spawn from state after successful capture
+      // Find the spawn that contains this cycle
+      const spawnIndex = spawns.value.findIndex((spawn) =>
+        spawn.active_cycles.some((cycle) => cycle.id === spawnCycleId)
+      );
+
+      if (spawnIndex !== -1) {
+        // Remove the entire spawn since we're capturing the single cycle shown
+        spawns.value.splice(spawnIndex, 1);
+      }
+
+      // API returns { message, data } structure
+      return { success: true, data: response?.data || response };
+    } catch (err: any) {
+      const errorMessage =
+        err.data?.errors?.spawn?.[0] ||
+        err.data?.message ||
+        'Failed to capture companion. Please try again.';
+      return { success: false, error: errorMessage };
+    }
+  };
+
+  /**
    * Get capturable spawns only
    */
   const capturableSpawns = computed<NearbySpawn[]>(() => {
@@ -349,6 +385,7 @@ export const useNearbySpawns = () => {
     fetchNearbySpawns,
     clearSpawns,
     getSpawnById,
+    captureSpawn,
     initializeWebSocket,
     cleanupWebSocket,
   };

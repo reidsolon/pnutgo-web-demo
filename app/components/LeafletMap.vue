@@ -155,7 +155,8 @@
       :spawn="selectedCompanion.spawn"
       :cycle="selectedCompanion.cycle"
       :capturing="capturing"
-      @close="selectedCompanion = null"
+      :error="captureError"
+      @close="selectedCompanion = null; captureError = null;"
       @capture="captureCompanion"
       @mark-spotted="markAsSpotted"
     />
@@ -163,12 +164,7 @@
 </template>
 
 <script setup lang="ts">
-import type { NearbySpawn, ActiveCycle } from '~/composables/use-nearby-spawns';
-
-interface MapProps {
-  userLocation?: { lat: number; lng: number } | null;
-  locationEnabled?: boolean;
-}
+import type { MapProps, SelectedCompanion } from '~/types';
 
 const props = withDefaults(defineProps<MapProps>(), {
   userLocation: null,
@@ -177,7 +173,7 @@ const props = withDefaults(defineProps<MapProps>(), {
 
 const emit = defineEmits<{
   locationUpdate: [location: { lat: number; lng: number }];
-  companionCaptured: [companionId: number];
+  companionCaptured: [companion: any];
 }>();
 
 // Use nearby spawns composable
@@ -187,9 +183,12 @@ const {
   error: spawnsError, 
   radiusInfo, 
   fetchNearbySpawns,
+  captureSpawn,
   initializeWebSocket,
   cleanupWebSocket
 } = useNearbySpawns();
+
+const captureError = ref<string | null>(null);
 
 // Use grid coordinates composable
 const { 
@@ -227,10 +226,6 @@ const visibleRadius = reactive({
 });
 
 // Selected companion state
-interface SelectedCompanion {
-  spawn: NearbySpawn;
-  cycle: ActiveCycle;
-}
 const selectedCompanion = ref<SelectedCompanion | null>(null);
 const capturing = ref(false);
 
@@ -592,11 +587,13 @@ const updateCompanionMarkers = async () => {
       spawn.active_cycles.forEach(cycle => {
         if (!cycle.is_active) return;
 
-        const rarityColors = {
-          common: 'from-gray-400 to-gray-600',
-          rare: 'from-blue-500 to-purple-600',
+        const rarityColors: Record<string, string> = {
+          ultra_rare: 'from-purple-500 to-pink-600',
+          legendary: 'from-yellow-500 to-orange-600',
           epic: 'from-purple-500 to-pink-600',
-          legendary: 'from-yellow-500 to-orange-600'
+          rare: 'from-blue-500 to-purple-600',
+          uncommon: 'from-green-500 to-teal-600',
+          common: 'from-gray-400 to-gray-600'
         };
 
         const isSilhouette = spawn.show_silhouette;
@@ -652,25 +649,39 @@ const updateCompanionMarkers = async () => {
 };
 
 // Capture companion
-const captureCompanion = async (spawnId: number) => {
+const captureCompanion = async (spawnCycleId: number) => {
+  if (!props.userLocation) {
+    console.error('User location not available');
+    return;
+  }
+
   capturing.value = true;
+  captureError.value = null;
   
   try {
-    // Mock capture - replace with actual API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // Refresh spawns after capture
-    if (props.userLocation) {
-      await fetchNearbySpawns(props.userLocation.lat, props.userLocation.lng);
+    const { success, data, error } = await captureSpawn(
+      spawnCycleId,
+      props.userLocation.lat,
+      props.userLocation.lng
+    );
+
+    if (success) {
+      // Close modal
+      selectedCompanion.value = null;
+      
+      // Markers will update automatically via reactivity
+      await nextTick();
       await updateCompanionMarkers();
+      
+      // Emit capture event with companion data
+      emit('companionCaptured', data?.companion || data);
+    } else {
+      // Set error to display in modal
+      captureError.value = error || 'Capture failed';
     }
-    
-    selectedCompanion.value = null;
-    
-    // Emit capture event
-    emit('companionCaptured', spawnId);
   } catch (error) {
     console.error('Failed to capture companion:', error);
+    captureError.value = 'An unexpected error occurred. Please try again.';
   } finally {
     capturing.value = false;
   }
