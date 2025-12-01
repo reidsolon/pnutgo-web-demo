@@ -173,7 +173,7 @@
 </template>
 
 <script setup lang="ts">
-import type { RarityKey, Animal } from '~/types';
+import type { Animal } from '~/types';
 import { RARITY_ORDER_LIST, RARITY_LABELS, getRarityClass } from '~/types';
 
 definePageMeta({

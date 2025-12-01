@@ -150,13 +150,14 @@
     </div>
 
     <!-- Companion Detail Modal -->
-    <SpawnDetailModal
-      v-if="selectedCompanion"
-      :spawn="selectedCompanion.spawn"
-      :cycle="selectedCompanion.cycle"
+    <AnimalDetailModal
+      v-if="selectedCompanion && selectedAnimal && spawnData"
+      :animal="selectedAnimal"
+      :show-map-actions="true"
+      :spawn-data="spawnData"
       :capturing="capturing"
       :error="captureError"
-      @close="selectedCompanion = null; captureError = null;"
+      @close="closeCompanionModal"
       @capture="captureCompanion"
       @mark-spotted="markAsSpotted"
     />
@@ -228,6 +229,50 @@ const visibleRadius = reactive({
 // Selected companion state
 const selectedCompanion = ref<SelectedCompanion | null>(null);
 const capturing = ref(false);
+
+// Computed to convert selected companion to Animal format
+const selectedAnimal = computed(() => {
+  if (!selectedCompanion.value) return null;
+  
+  const companion = selectedCompanion.value.cycle.companion;
+  return {
+    id: companion.id,
+    name: companion.name,
+    description: companion.description || '',
+    personality: companion.personality || '',
+    traits: companion.traits || '',
+    rarity: companion.rarity as any,
+    rarity_label: companion.rarity_label,
+    view_image: companion.view_image,
+    silhouette_image: companion.silhouette_image,
+    is_captured: !selectedCompanion.value.spawn.show_silhouette,
+    capture_count: 0,
+    times_captured: 0
+  };
+});
+
+// Computed to provide spawn data for map actions
+const spawnData = computed(() => {
+  if (!selectedCompanion.value) return null;
+  
+  const spawn = selectedCompanion.value.spawn;
+  const cycle = selectedCompanion.value.cycle;
+  
+  return {
+    spawn_id: spawn.id,
+    cycle_id: cycle.id,
+    distance: spawn.distance,
+    expires_at: cycle.expires_at,
+    remaining_captures: cycle.remaining_captures,
+    capturable: spawn.capturable
+  };
+});
+
+// Close companion modal
+const closeCompanionModal = () => {
+  selectedCompanion.value = null;
+  captureError.value = null;
+};
 
 // Computed for getting mutable copy of spawns
 const mutableSpawns = computed(() => spawns.value);

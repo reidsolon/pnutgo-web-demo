@@ -16,7 +16,7 @@
         <div class="relative">
           <div class="bg-gradient-to-r from-green-400 to-green-500 rounded-full px-6 sm:px-8 py-2 sm:py-3 shadow-lg border-3 sm:border-4 border-white">
             <h1 class="text-2xl sm:text-3xl font-black text-gray-900 tracking-wide">
-              {{ animal.is_captured ? 'COLLECTED!' : 'IN THE WILD!' }}
+              {{ getBannerTitle }}
             </h1>
           </div>
           <div class="absolute -left-2 top-1/2 -translate-y-1/2 w-2 h-2 sm:w-3 sm:h-3 bg-white rounded-full"></div>
@@ -99,7 +99,7 @@
             </div>
 
             <!-- Additional Info (Captures, etc.) -->
-            <div v-if="animal.is_captured" class="pt-4 sm:pt-6 border-t-2 border-gray-100 space-y-2 sm:space-y-3">
+            <div v-if="animal.is_captured && !showMapActions" class="pt-4 sm:pt-6 border-t-2 border-gray-100 space-y-2 sm:space-y-3">
               <div class="flex items-center justify-between text-xs sm:text-sm">
                 <span class="text-gray-600 font-semibold">Times Captured:</span>
                 <span class="font-bold text-gray-900">{{ animal.times_captured }}</span>
@@ -109,6 +109,86 @@
                 <span class="text-gray-600 font-semibold">Total in Collection:</span>
                 <span class="font-bold text-gray-900">{{ animal.capture_count }}</span>
               </div>
+            </div>
+
+            <!-- Map-specific info (distance, expiry, etc.) -->
+            <div v-if="showMapActions && spawnData" class="pt-4 sm:pt-6 border-t-2 border-gray-100 space-y-2 sm:space-y-3">
+              <div class="flex items-center justify-between text-xs sm:text-sm">
+                <span class="text-gray-600 font-semibold">Distance:</span>
+                <span class="font-bold text-gray-900">{{ formatDistance(spawnData.distance) }}</span>
+              </div>
+              
+              <div v-if="spawnData.expires_at" class="flex items-center justify-between text-xs sm:text-sm">
+                <span class="text-gray-600 font-semibold">Expires In:</span>
+                <span class="font-bold text-gray-900">{{ formatExpiry(spawnData.expires_at) }}</span>
+              </div>
+
+              <div v-if="spawnData.remaining_captures !== undefined" class="flex items-center justify-between text-xs sm:text-sm">
+                <span class="text-gray-600 font-semibold">Remaining Captures:</span>
+                <span class="font-bold text-gray-900">{{ spawnData.remaining_captures }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Map Action Buttons -->
+          <div v-if="showMapActions && spawnData" class="space-y-3 sm:space-y-4">
+            <!-- Error Message -->
+            <div v-if="error" class="p-3 sm:p-4 rounded-xl bg-red-50 border border-red-200">
+              <div class="flex items-center">
+                <Icon name="heroicons:exclamation-triangle" class="h-5 w-5 text-red-500 mr-2 flex-shrink-0" />
+                <span class="text-sm text-red-700">{{ error }}</span>
+              </div>
+            </div>
+
+            <!-- Capture Button -->
+            <button
+              v-if="spawnData.capturable"
+              @click="$emit('capture', spawnData.cycle_id)"
+              :disabled="capturing || spawnData.remaining_captures === 0"
+              class="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-black text-lg sm:text-xl py-4 sm:py-5 rounded-full shadow-2xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] disabled:hover:scale-100 flex items-center justify-center gap-2 sm:gap-3"
+            >
+              <Icon
+                v-if="capturing"
+                name="heroicons:arrow-path"
+                class="w-5 h-5 sm:w-6 sm:h-6 animate-spin"
+              />
+              <Icon
+                v-else
+                name="heroicons:hand-raised"
+                class="w-5 h-5 sm:w-6 sm:h-6"
+              />
+              <span v-if="capturing">Capturing...</span>
+              <span v-else-if="spawnData.remaining_captures === 0">Capture Limit Reached</span>
+              <span v-else>Capture Companion</span>
+            </button>
+
+            <!-- Mark as Spotted Button -->
+            <button
+              v-if="!spawnData.capturable && !animal.is_captured"
+              @click="$emit('mark-spotted', spawnData.spawn_id)"
+              :disabled="capturing"
+              class="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-black text-lg sm:text-xl py-4 sm:py-5 rounded-full shadow-2xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] disabled:hover:scale-100 flex items-center justify-center gap-2 sm:gap-3"
+            >
+              <Icon
+                v-if="capturing"
+                name="heroicons:arrow-path"
+                class="w-5 h-5 sm:w-6 sm:h-6 animate-spin"
+              />
+              <Icon
+                v-else
+                name="heroicons:eye"
+                class="w-5 h-5 sm:w-6 sm:h-6"
+              />
+              <span v-if="capturing">Marking...</span>
+              <span v-else>Mark as Spotted</span>
+            </button>
+
+            <!-- Too Far Away Message -->
+            <div
+              v-if="!spawnData.capturable && animal.is_captured"
+              class="w-full bg-gray-300 text-gray-600 font-black text-lg sm:text-xl py-4 sm:py-5 rounded-full text-center"
+            >
+              Too Far Away
             </div>
           </div>
         </div>
@@ -121,17 +201,72 @@
 import type { Animal } from '~/types';
 import { getRarityClass } from '~/types';
 
-interface Props {
-  animal: Animal;
+interface SpawnData {
+  spawn_id: number;
+  cycle_id: number;
+  distance: number;
+  expires_at?: string;
+  remaining_captures?: number;
+  capturable: boolean;
 }
 
-defineProps<Props>();
+interface Props {
+  animal: Animal;
+  showMapActions?: boolean;
+  spawnData?: SpawnData;
+  capturing?: boolean;
+  error?: string | null;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  showMapActions: false,
+  capturing: false,
+  error: null
+});
 
 const emit = defineEmits<{
   close: [];
+  capture: [cycleId: number];
+  'mark-spotted': [spawnId: number];
 }>();
 
 const getRarityBadgeClass = getRarityClass;
+
+// Computed banner title
+const getBannerTitle = computed(() => {
+  // If viewing from map (with spawn actions)
+  if (props.showMapActions) {
+    return 'SPOTTED!';
+  }
+  // If viewing from collection
+  return props.animal.is_captured ? 'COLLECTED!' : 'IN THE WILD!';
+});
+
+// Format distance
+const formatDistance = (meters: number): string => {
+  if (meters < 1000) {
+    return `${Math.round(meters)}m`;
+  }
+  return `${(meters / 1000).toFixed(1)}km`;
+};
+
+// Format expiry time
+const formatExpiry = (expiresAt: string): string => {
+  const now = new Date();
+  const expiry = new Date(expiresAt);
+  const diff = expiry.getTime() - now.getTime();
+  
+  if (diff < 0) return 'Expired';
+  
+  const minutes = Math.floor(diff / 1000 / 60);
+  const hours = Math.floor(minutes / 60);
+  
+  if (hours > 0) {
+    return `${hours}h ${minutes % 60}m`;
+  }
+  
+  return `${minutes}m`;
+};
 </script>
 
 <style scoped>
