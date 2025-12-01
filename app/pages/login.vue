@@ -97,21 +97,12 @@
           </button>
         </form>
 
-        <!-- Demo Credentials -->
-        <div class="mt-6 p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-          <p class="text-sm text-blue-700 dark:text-blue-400 mb-2 font-medium">Demo Credentials:</p>
-          <div class="space-y-1 text-xs text-blue-600 dark:text-blue-300">
-            <p><strong>Email:</strong> user@example.com</p>
-            <p><strong>Password:</strong> password123</p>
-          </div>
+        <!-- Footer -->
+        <div class="text-center mt-8">
+          <p class="text-sm text-gray-500 dark:text-gray-400">
+            By signing in, you agree to our Terms of Service and Privacy Policy
+          </p>
         </div>
-      </div>
-
-      <!-- Footer -->
-      <div class="text-center mt-8">
-        <p class="text-sm text-gray-500 dark:text-gray-400">
-          By signing in, you agree to our Terms of Service and Privacy Policy
-        </p>
       </div>
     </div>
   </div>
@@ -182,12 +173,4 @@ const handleLogin = async () => {
     password: form.password
   });
 };
-
-// Auto-fill demo credentials for testing
-onMounted(() => {
-  if (process.dev) {
-    form.username = 'user@example.com';
-    form.password = 'password123';
-  }
-});
 </script>

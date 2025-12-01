@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-blue-950 dark:to-indigo-950">
+  <div class="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-blue-950 dark:to-indigo-950 pb-20">
     <!-- Header Slot -->
     <slot name="header" />
 
@@ -8,7 +8,7 @@
       <slot />
     </main>
 
-    <!-- Bottom Navigation -->
+    <!-- Bottom Navigation (Fixed) -->
     <BottomNav />
   </div>
 </template>

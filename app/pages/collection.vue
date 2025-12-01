@@ -57,15 +57,22 @@
                   @click="openAnimalModal(animal)"
                 >
                   <!-- Animal Image -->
-                  <div class="w-20 h-20 rounded-full mx-auto mb-3 overflow-hidden bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
-                    <img 
-                      v-if="animal.view_image?.url" 
-                      :src="animal.view_image.url" 
-                      :alt="animal.name"
-                      class="w-full h-full object-cover"
-                      @error="handleImageError"
-                    />
-                    <Icon v-else name="heroicons:sparkles" class="w-10 h-10 text-purple-500" />
+                  <div class="relative w-20 h-20 mx-auto mb-3">
+                    <div class="w-full h-full rounded-full overflow-hidden bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
+                      <img 
+                        v-if="animal.view_image?.url" 
+                        :src="animal.view_image.url" 
+                        :alt="animal.name"
+                        class="w-full h-full object-cover"
+                        @error="handleImageError"
+                      />
+                      <Icon v-else name="heroicons:sparkles" class="w-10 h-10 text-purple-500" />
+                    </div>
+                    
+                    <!-- Capture Count Badge -->
+                    <div v-if="animal.times_captured > 1" class="absolute -bottom-1 -right-1 bg-gray-900 text-white text-xs font-bold px-1.5 py-0.5 rounded-full border-2 border-white shadow-lg">
+                      x{{ animal.times_captured }}
+                    </div>
                   </div>
                   
                   <h3 class="font-bold text-sm text-gray-900 dark:text-white">

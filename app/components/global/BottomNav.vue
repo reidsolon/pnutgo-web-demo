@@ -1,5 +1,5 @@
 <template>
-  <nav class="glass-strong border-t border-white/20 p-4 backdrop-blur-xl">
+  <nav class="fixed bottom-0 left-0 right-0 z-40 glass-strong border-t border-white/20 p-4 backdrop-blur-xl">
     <div class="flex items-center justify-around">
       <NuxtLink to="/map" class="nav-item" :class="{ active: isActive('/map') }">
         <Icon name="heroicons:map" class="w-6 h-6 mb-1" />

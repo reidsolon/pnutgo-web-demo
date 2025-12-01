@@ -28,65 +28,38 @@
       <div class="flex-1 overflow-y-auto px-4 pb-4">
         <div class="max-w-md mx-auto">
           <!-- Companion Card -->
-          <div class="relative bg-gradient-to-b from-yellow-300 via-yellow-200 to-yellow-400 rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl border-4 sm:border-8 border-white mb-4 sm:mb-6">
+          <div class="relative bg-white rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl border-4 sm:border-8 border-white mb-4 sm:mb-6">
             <!-- Heart Icon -->
             <button class="absolute top-3 right-3 sm:top-4 sm:right-4 z-10 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white shadow-lg flex items-center justify-center hover:scale-110 transition-transform">
               <Icon name="heroicons:heart" class="w-5 h-5 sm:w-6 sm:h-6 text-gray-900" />
             </button>
 
-            <!-- Companion Image with decorative background -->
-            <div class="relative h-56 sm:h-72 flex items-end justify-center overflow-hidden">
-              <!-- Decorative clouds -->
-              <div class="absolute top-4 sm:top-8 left-8 sm:left-12 w-16 sm:w-24 h-8 sm:h-12 bg-white/40 rounded-full blur-sm"></div>
-              <div class="absolute top-6 sm:top-12 left-20 sm:left-32 w-20 sm:w-32 h-10 sm:h-14 bg-white/30 rounded-full blur-sm"></div>
-              <div class="absolute top-8 sm:top-16 right-8 sm:right-12 w-18 sm:w-28 h-8 sm:h-12 bg-white/40 rounded-full blur-sm"></div>
-              
-              <!-- Grass/Ground elements -->
-              <div class="absolute bottom-0 left-0 right-0 h-24 sm:h-32">
-                <!-- Decorative flowers and plants -->
-                <div class="absolute bottom-8 sm:bottom-12 left-6 sm:left-8 w-8 sm:w-12 h-8 sm:h-12 bg-green-600/30 rounded-full"></div>
-                <div class="absolute bottom-10 sm:bottom-16 left-10 sm:left-16 w-6 sm:w-8 h-10 sm:h-16 bg-green-700/40 rounded-t-full"></div>
-                <div class="absolute bottom-6 sm:bottom-8 right-8 sm:right-12 w-10 sm:w-16 h-10 sm:h-16">
-                  <div class="absolute inset-0 bg-yellow-500/60 rounded-full"></div>
-                  <div class="absolute inset-2 bg-orange-400/60 rounded-full"></div>
-                </div>
-                <div class="absolute bottom-10 sm:bottom-14 right-16 sm:right-24 w-8 sm:w-10 h-8 sm:h-10">
-                  <div class="absolute inset-0 bg-red-400/50 rounded-full"></div>
-                  <div class="absolute inset-2 bg-orange-300/50 rounded-full"></div>
-                </div>
-                
-                <!-- Grass layers -->
-                <div class="absolute bottom-0 left-0 right-0 h-16 sm:h-24 bg-gradient-to-b from-green-600/40 to-green-700/60 rounded-t-[50%]"></div>
-                <div class="absolute bottom-0 left-0 right-0 h-10 sm:h-16 bg-gradient-to-b from-green-700/50 to-green-800/70 rounded-t-[50%]"></div>
+            <!-- Companion Image -->
+            <div class="relative w-full aspect-square flex items-center justify-center p-4 sm:p-6">
+              <img 
+                v-if="!animal.is_captured && animal.silhouette_image?.url"
+                :src="animal.silhouette_image.url"
+                :alt="animal.name"
+                class="w-full h-full object-contain drop-shadow-2xl filter brightness-0"
+              />
+              <img 
+                v-else-if="animal.is_captured && animal.view_image?.url"
+                :src="animal.view_image.url"
+                :alt="animal.name"
+                class="w-full h-full object-contain drop-shadow-2xl"
+              />
+              <div v-else class="w-full h-full flex items-center justify-center">
+                <Icon name="heroicons:sparkles" class="w-24 h-24 sm:w-32 sm:h-32 text-gray-400 drop-shadow-xl" />
               </div>
-
-              <!-- Companion Image -->
-              <div class="relative z-10 mb-8 sm:mb-12">
-                <img 
-                  v-if="!animal.is_captured && animal.silhouette_image?.url"
-                  :src="animal.silhouette_image.url"
-                  :alt="animal.name"
-                  class="w-48 h-48 sm:w-64 sm:h-64 object-contain drop-shadow-2xl filter brightness-0"
-                />
-                <img 
-                  v-else-if="animal.is_captured && animal.view_image?.url"
-                  :src="animal.view_image.url"
-                  :alt="animal.name"
-                  class="w-48 h-48 sm:w-64 sm:h-64 object-contain drop-shadow-2xl"
-                />
-                <div v-else class="w-48 h-48 sm:w-64 sm:h-64 flex items-center justify-center">
-                  <Icon name="heroicons:sparkles" class="w-24 h-24 sm:w-32 sm:h-32 text-white drop-shadow-xl" />
-                </div>
-                
-                <!-- Lightning bolt decoration (if companion has lightning trait) -->
-                <div 
-                  v-if="animal.is_captured && animal.traits?.toLowerCase().includes('lightning')" 
-                  class="absolute bottom-6 sm:bottom-8 -right-3 sm:-right-4 w-12 h-18 sm:w-16 sm:h-24"
-                >
-                  <svg viewBox="0 0 24 48" fill="none" class="w-full h-full drop-shadow-lg">
-                    <path d="M12 0L8 20H16L12 48L20 16H12L12 0Z" fill="#FCD34D" stroke="#F59E0B" stroke-width="2"/>
-                  </svg>
-                </div>
+              
+              <!-- Lightning bolt decoration (if companion has lightning trait) -->
+              <div 
+                v-if="animal.is_captured && animal.traits?.toLowerCase().includes('lightning')" 
+                class="absolute bottom-6 sm:bottom-8 right-6 sm:right-8 w-12 h-18 sm:w-16 sm:h-24"
+              >
+                <svg viewBox="0 0 24 48" fill="none" class="w-full h-full drop-shadow-lg">
+                  <path d="M12 0L8 20H16L12 48L20 16H12L12 0Z" fill="#FCD34D" stroke="#F59E0B" stroke-width="2"/>
+                </svg>
               </div>
             </div>
           </div>
