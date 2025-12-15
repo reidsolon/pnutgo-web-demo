@@ -57,8 +57,11 @@ const REGIONS = {
 
 /**
  * Get region based on user coordinates
+ * Returns the smallest (most specific) matching region when coordinates fall within multiple regions
  */
 const getRegionFromCoordinates = (lat: number, lng: number): string => {
+  const matches: Record<string, number> = {};
+
   for (const [region, bounds] of Object.entries(REGIONS)) {
     if (
       lat >= bounds.lat_min &&
@@ -66,10 +69,18 @@ const getRegionFromCoordinates = (lat: number, lng: number): string => {
       lng >= bounds.lng_min &&
       lng <= bounds.lng_max
     ) {
-      return region;
+      const area = (bounds.lat_max - bounds.lat_min) * (bounds.lng_max - bounds.lng_min);
+      matches[region] = area;
     }
   }
-  return 'global'; // Default fallback
+
+  if (Object.keys(matches).length === 0) {
+    return 'global';
+  }
+
+  // Sort by area (ascending) and return the smallest region
+  const sortedRegions = Object.entries(matches).sort(([, a], [, b]) => a - b);
+  return sortedRegions[0][0];
 };
 
 export const useWebSocket = () => {
