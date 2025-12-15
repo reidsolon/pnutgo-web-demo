@@ -651,7 +651,8 @@ const updateCompanionMarkers = async () => {
 
         const markerHtml = `
           <div class="companion-marker-wrapper">
-            <div class="spawn-id-label">${spawn.id}</div>
+            <div class="spawn-id-label">Spawn: ${spawn.id}</div>
+            <div class="spawn-cycle-id-label">Cycle: ${cycle.id}</div>
             <div class="companion-marker transform hover:scale-110 transition-all duration-200 cursor-pointer relative">
               <div class="w-12 h-12 rounded-full bg-gradient-to-br ${rarityColors[cycle.companion.rarity] || rarityColors.common} p-1 shadow-xl">
                 <div class="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
@@ -819,6 +820,19 @@ onUnmounted(() => {
   backdrop-filter: blur(4px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.spawn-cycle-id-label {
+  background: rgba(59, 130, 246, 0.85);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 500;
+  white-space: nowrap;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
 :deep(.leaflet-container) {

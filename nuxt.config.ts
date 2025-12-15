@@ -19,6 +19,8 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     authSecret: process.env.NUXT_AUTH_SECRET,
+    basicAuthUser: process.env.BASIC_AUTH_USER || 'admin',
+    basicAuthPass: process.env.BASIC_AUTH_PASS || 'pnutgo@2025~',
     public: {
       authUrl: process.env.NUXT_AUTH_URL || 'http://localhost:3000',
       apiBaseUrl: process.env.API_BASE_URL || 'http://localhost:8000/api',
