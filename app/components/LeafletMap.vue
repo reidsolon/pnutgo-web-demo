@@ -15,12 +15,14 @@
 
     <!-- Spawns Loading Indicator -->
     <div
-      v-if="!mapLoading && spawnsLoading"
+      v-if="!mapLoading && (spawnsLoading || distantSpawnsLoading)"
       class="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10"
     >
       <div class="glass-strong px-4 py-2 rounded-full flex items-center space-x-2">
         <Icon name="heroicons:arrow-path" class="w-4 h-4 text-blue-500 animate-spin" />
-        <span class="text-sm font-medium">Loading companions...</span>
+        <span class="text-sm font-medium">
+          {{ spawnsLoading ? 'Loading companions...' : 'Loading viewport spawns...' }}
+        </span>
       </div>
     </div>
 
@@ -189,6 +191,15 @@ const {
   cleanupWebSocket
 } = useNearbySpawns();
 
+// Use distant spawns composable
+const {
+  distantSpawns,
+  loading: distantSpawnsLoading,
+  error: distantSpawnsError,
+  fetchViewportSpawns,
+  clearDistantSpawns
+} = useDistantSpawns();
+
 const captureError = ref<string | null>(null);
 
 // Use grid coordinates composable
@@ -206,7 +217,9 @@ const map = ref<any>(null);
 const userMarker = ref<any>(null);
 const radiusCircles = ref<{ [key: string]: any }>({});
 const companionMarkers = ref<any[]>([]);
+const distantSpawnMarkers = ref<any[]>([]);
 const mapContainer = ref<HTMLElement | null>(null);
+const moveEndTimeout = ref<number | null>(null);
 
 // Grid state
 const showGrid = ref(false);
@@ -324,6 +337,9 @@ const initMap = async () => {
     // Small delay to ensure map is rendered
     await nextTick();
     map.value.invalidateSize();
+    
+    // Add map move end listener for viewport spawns
+    map.value.on('moveend', handleMapMoveEnd);
     
     // If we have user location, update the marker
     if (props.userLocation) {
@@ -609,6 +625,87 @@ const fetchNearbyCompanions = async () => {
   }
 };
 
+// Handle map move end with debounce
+const handleMapMoveEnd = () => {
+  // Clear existing timeout
+  if (moveEndTimeout.value) {
+    clearTimeout(moveEndTimeout.value);
+  }
+
+  // Set new timeout to fetch after 500ms of no movement
+  moveEndTimeout.value = setTimeout(() => {
+    fetchViewportSpawnsDebounced();
+  }, 500) as unknown as number;
+};
+
+// Fetch viewport spawns based on current map bounds
+const fetchViewportSpawnsDebounced = async () => {
+  if (!map.value || !props.userLocation) return;
+
+  try {
+    const bounds = map.value.getBounds();
+    const ne = bounds.getNorthEast();
+    const sw = bounds.getSouthWest();
+
+    await fetchViewportSpawns(
+      {
+        ne_lat: ne.lat,
+        ne_lng: ne.lng,
+        sw_lat: sw.lat,
+        sw_lng: sw.lng,
+      },
+      props.userLocation.lat,
+      props.userLocation.lng
+    );
+
+    // Update distant spawn markers after fetching
+    await updateDistantSpawnMarkers();
+  } catch (error) {
+    console.error('Failed to fetch viewport spawns:', error);
+  }
+};
+
+// Update distant spawn markers (purple circles)
+const updateDistantSpawnMarkers = async () => {
+  if (!map.value) return;
+
+  try {
+    const L = await import('leaflet');
+
+    // Remove existing distant spawn markers
+    distantSpawnMarkers.value.forEach(marker => {
+      if (marker && map.value) {
+        map.value.removeLayer(marker);
+      }
+    });
+    distantSpawnMarkers.value = [];
+
+    // Add new purple circle markers for distant spawns
+    distantSpawns.value.forEach(spawn => {
+      const marker = L.default.circleMarker([spawn.lat, spawn.lng], {
+        radius: 6,
+        fillColor: '#9333ea', // Purple color
+        color: '#7c3aed', // Darker purple border
+        weight: 2,
+        opacity: 0.8,
+        fillOpacity: 0.6,
+      }).addTo(map.value);
+
+      // Add tooltip with spawn ID
+      marker.bindTooltip(
+        `<div class="text-xs font-medium">Spawn #${spawn.id}</div>`,
+        { permanent: false, direction: 'top' }
+      );
+
+      distantSpawnMarkers.value.push(marker);
+    });
+
+    console.log(`✅ Added ${distantSpawnMarkers.value.length} distant spawn markers`);
+  } catch (error) {
+    console.error('Failed to update distant spawn markers:', error);
+  }
+};
+
 // Update companion markers
 const updateCompanionMarkers = async () => {
   if (!map.value) return;
@@ -651,8 +748,6 @@ const updateCompanionMarkers = async () => {
 
         const markerHtml = `
           <div class="companion-marker-wrapper">
-            <div class="spawn-id-label">Spawn: ${spawn.id}</div>
-            <div class="spawn-cycle-id-label">Cycle: ${cycle.id}</div>
             <div class="companion-marker transform hover:scale-110 transition-all duration-200 cursor-pointer relative">
               <div class="w-12 h-12 rounded-full bg-gradient-to-br ${rarityColors[cycle.companion.rarity] || rarityColors.common} p-1 shadow-xl">
                 <div class="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
@@ -663,6 +758,8 @@ const updateCompanionMarkers = async () => {
                 </div>
               </div>
               ${isCapturable ? '<div class="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse border-2 border-white"></div>' : ''}
+              <div class="spawn-id-label">${spawn.id}</div>
+              <div class="spawn-cycle-id-label">${cycle.id}</div>
             </div>
           </div>
         `;
@@ -772,6 +869,14 @@ watch(spawns, async () => {
   }
 }, { deep: true });
 
+// Watch for distant spawns changes to update markers
+watch(distantSpawns, async () => {
+  if (map.value && !distantSpawnsLoading.value) {
+    console.log('Distant spawns updated, refreshing markers...');
+    await updateDistantSpawnMarkers();
+  }
+}, { deep: true });
+
 // Initialize on mount
 onMounted(async () => {
   console.log('LeafletMap component mounted');
@@ -784,10 +889,21 @@ onMounted(async () => {
 // Cleanup on unmount
 onUnmounted(() => {
   cleanupWebSocket();
+  
+  // Clear moveend timeout
+  if (moveEndTimeout.value) {
+    clearTimeout(moveEndTimeout.value);
+  }
+  
+  // Remove map event listener
   if (map.value) {
+    map.value.off('moveend', handleMapMoveEnd);
     map.value.remove();
     map.value = null;
   }
+  
+  // Clear distant spawns
+  clearDistantSpawns();
 });
 </script>
 
@@ -810,11 +926,15 @@ onUnmounted(() => {
 }
 
 .spawn-id-label {
+  position: absolute;
+  bottom: -18px;
+  left: 50%;
+  transform: translateX(-50%);
   background: rgba(0, 0, 0, 0.75);
   color: white;
   padding: 2px 8px;
   border-radius: 12px;
-  font-size: 11px;
+  font-size: 9px;
   font-weight: 600;
   white-space: nowrap;
   backdrop-filter: blur(4px);
@@ -823,11 +943,15 @@ onUnmounted(() => {
 }
 
 .spawn-cycle-id-label {
+  position: absolute;
+  bottom: -36px;
+  left: 50%;
+  transform: translateX(-50%);
   background: rgba(59, 130, 246, 0.85);
   color: white;
   padding: 2px 6px;
   border-radius: 10px;
-  font-size: 10px;
+  font-size: 8px;
   font-weight: 500;
   white-space: nowrap;
   backdrop-filter: blur(4px);
