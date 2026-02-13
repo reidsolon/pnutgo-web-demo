@@ -5,16 +5,18 @@ export const useApiClient = () => {
   // Create authenticated API client
   const apiClient = $fetch.create({
     baseURL: config.public.apiBaseUrl,
-    headers: {
-      Accept: 'application/json',
-    },
     onRequest({ options }) {
+      const headers: Record<string, string> = {
+        Accept: 'application/json',
+        'X-App-Key': (config.public.appApiKey as string) || '',
+        'X-App-Secret': (config.public.appApiSecret as string) || '',
+      };
+
       if (token.value) {
-        options.headers = {
-          ...options.headers,
-          Authorization: `Bearer ${token.value}`
-        };
+        headers['Authorization'] = `Bearer ${token.value}`;
       }
+
+      options.headers = headers;
     },
     onResponseError({ response, error }) {
       // Handle 401 unauthorized
